@@ -1,7 +1,7 @@
 package com.meet.pdf_marketplace.controller;
 
 import com.meet.pdf_marketplace.dto.ApiResponseDTO;
-import com.meet.pdf_marketplace.dto.Auth0RegisterRequestDTO;
+import com.meet.pdf_marketplace.dto.RegisterUserRequestDTO;
 import com.meet.pdf_marketplace.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,11 +18,11 @@ public class AuthController {
     private final AuthService authService;
 
     /**
-     * Registers or updates a user after successful Auth0 authentication.
+     * Registers or updates a user after successful Supabase authentication.
      */
     @PostMapping("/register")
     public ApiResponseDTO<Void> register(
-            @Valid @RequestBody Auth0RegisterRequestDTO request
+            @Valid @RequestBody RegisterUserRequestDTO request
     ) {
 
         authService.register(request);

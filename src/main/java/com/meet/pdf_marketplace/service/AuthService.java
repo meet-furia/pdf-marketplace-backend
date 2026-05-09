@@ -1,6 +1,6 @@
 package com.meet.pdf_marketplace.service;
 
-import com.meet.pdf_marketplace.dto.Auth0RegisterRequestDTO;
+import com.meet.pdf_marketplace.dto.RegisterUserRequestDTO;
 import com.meet.pdf_marketplace.entity.UserEntity;
 import com.meet.pdf_marketplace.enums.UserStatus;
 import com.meet.pdf_marketplace.repository.UserRepository;
@@ -15,13 +15,13 @@ public class AuthService {
     private final UserRepository userRepository;
 
     /**
-     * Creates or updates a user after successful Auth0 authentication.
+     * Creates or updates a user after successful Supabase authentication.
      */
     @Transactional
-    public void register(Auth0RegisterRequestDTO request) {
+    public void register(RegisterUserRequestDTO request) {
 
         UserEntity existingUser = userRepository
-                .findByAuth0Id(request.auth0UserId())
+                .findBySupabaseUserId(request.supabaseUserId())
                 .orElse(null);
 
         // Update existing user details if user already exists
@@ -38,7 +38,7 @@ public class AuthService {
 
         // Create new user
         UserEntity user = UserEntity.builder()
-                .auth0Id(request.auth0UserId())
+                .supabaseUserId(request.supabaseUserId())
                 .email(request.email())
                 .name(request.name())
                 .emailVerified(

@@ -7,11 +7,11 @@ import java.util.UUID;
 
 public interface UserRepository extends AbstractRepository<UserEntity, UUID> {
 
-    Optional<UserEntity> findByAuth0Id(String auth0Id);
+    Optional<UserEntity> findBySupabaseUserId(String supabaseUserId);
 
     Optional<UserEntity> findByEmailIgnoreCase(String email);
 
     boolean existsByEmailIgnoreCase(String email);
 
-    boolean existsByAuth0Id(String auth0Id);
+    boolean existsBySupabaseUserId(String supabaseUserId);
 }

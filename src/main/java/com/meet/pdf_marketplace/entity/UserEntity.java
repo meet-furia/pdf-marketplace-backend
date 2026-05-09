@@ -18,7 +18,7 @@ import lombok.experimental.SuperBuilder;
 public class UserEntity extends AbstractEntity {
 
     @Column(nullable = false, unique = true)
-    private String auth0Id;
+    private String supabaseUserId;
 
     @Column(nullable = false, unique = true)
     private String email;
