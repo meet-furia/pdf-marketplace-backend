@@ -9,6 +9,8 @@ import com.meet.pdf_marketplace.enums.PdfProductStatus;
 import com.meet.pdf_marketplace.exception.ResourceNotFoundException;
 import com.meet.pdf_marketplace.repository.PdfProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -97,6 +99,17 @@ public class PdfProductService {
                 .stream()
                 .map(this::toPublicResponse)
                 .toList();
+    }
+
+    /**
+     * Lists published PDF products with pagination for the homepage.
+     * Draft, unpublished, rejected, and deleted products are excluded.
+     */
+    @Transactional(readOnly = true)
+    public Page<PdfProductResponseDTO> getPublished(Pageable pageable) {
+
+        return pdfProductRepository.findByStatus(PdfProductStatus.PUBLISHED, pageable)
+                .map(this::toPublicResponse);
     }
 
     /**

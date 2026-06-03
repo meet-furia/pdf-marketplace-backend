@@ -7,8 +7,11 @@ import com.meet.pdf_marketplace.dto.UpdatePdfProductRequestDTO;
 import com.meet.pdf_marketplace.entity.UserEntity;
 import com.meet.pdf_marketplace.service.CurrentUserService;
 import com.meet.pdf_marketplace.service.PdfProductService;
+import com.meet.pdf_marketplace.util.Utils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,6 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -30,6 +34,29 @@ public class PdfProductController {
     private final PdfProductService pdfProductService;
 
     private final CurrentUserService currentUserService;
+
+    /**
+     * Lists published PDF products with pagination for the homepage.
+     * Only products with PUBLISHED status are returned.
+     */
+    @GetMapping
+    public ApiResponseDTO<Page<PdfProductResponseDTO>> getPublishedPage(
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "12") Integer size,
+            @RequestParam(defaultValue = "createdAt") String sortField,
+            @RequestParam(defaultValue = "DESC") String sortDirection
+    ) {
+
+        Pageable pageable = Utils.validateAndCreatePageable(page, size, sortField, sortDirection);
+
+        Page<PdfProductResponseDTO> products = pdfProductService.getPublished(pageable);
+
+        return ApiResponseDTO.<Page<PdfProductResponseDTO>>builder()
+                .success(true)
+                .message("Published products fetched successfully")
+                .data(products)
+                .build();
+    }
 
     /**
      * Creates a PDF product for a seller.
@@ -120,4 +147,5 @@ public class PdfProductController {
                 .data(products)
                 .build();
     }
+
 }
