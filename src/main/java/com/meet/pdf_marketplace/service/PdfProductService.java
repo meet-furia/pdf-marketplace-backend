@@ -65,7 +65,7 @@ public class PdfProductService {
         product.setFileKey(request.getFileKey());
         product.setThumbnailKey(request.getThumbnailKey());
         product.setCategory(request.getCategory());
-        product.setStatus(request.getStatus());
+        product.setStatus(resolveSellerStatus(request.getStatus()));
 
         return toSellerResponse(pdfProductRepository.save(product));
     }
@@ -149,6 +149,18 @@ public class PdfProductService {
                 throw new IllegalArgumentException("Thumbnail file key does not belong to the current user");
             }
         }
+    }
+
+    /**
+     * Prevents sellers from publishing without admin approval.
+     */
+    private PdfProductStatus resolveSellerStatus(PdfProductStatus requestedStatus) {
+
+        if (requestedStatus == PdfProductStatus.PUBLISHED) {
+            return PdfProductStatus.PENDING_APPROVAL;
+        }
+
+        return requestedStatus;
     }
 
     /**

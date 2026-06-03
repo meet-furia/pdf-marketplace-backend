@@ -8,4 +8,6 @@ import java.util.UUID;
 public interface OrderItemRepository extends AbstractRepository<OrderItemEntity, UUID> {
 
     List<OrderItemEntity> findByOrderId(UUID orderId);
+
+    List<OrderItemEntity> findByProductSellerId(UUID sellerId);
 }
