@@ -1,19 +1,28 @@
 package com.meet.pdf_marketplace.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import com.meet.pdf_marketplace.enums.UserStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RegisterUserRequestDTO {
+public class UserResponseDTO {
 
-    @NotBlank(message = "Name is required")
+    private UUID id;
+
+    private String supabaseUserId;
+
+    private String email;
+
     private String name;
+
+    private UserStatus status;
 
     private Boolean emailVerified;
 }

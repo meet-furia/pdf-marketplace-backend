@@ -1,19 +1,21 @@
 package com.meet.pdf_marketplace.dto;
 
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RegisterUserRequestDTO {
+public class GenerateDownloadUrlResponseDTO {
 
-    @NotBlank(message = "Name is required")
-    private String name;
+    private String downloadUrl;
 
-    private Boolean emailVerified;
+    private String fileKey;
+
+    private LocalDateTime expiresAt;
 }
