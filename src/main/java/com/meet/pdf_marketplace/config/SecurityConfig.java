@@ -43,7 +43,7 @@ public class SecurityConfig {
     }
 
     /**
-     * Builds a JWT decoder using Supabase JWK URL directly.
+     * Builds a JWT decoder using Supabase JWK URL directly. hi
      */
     @Bean
     public JwtDecoder jwtDecoder() {
