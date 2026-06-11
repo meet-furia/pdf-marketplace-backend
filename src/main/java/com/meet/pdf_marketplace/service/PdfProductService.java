@@ -1,8 +1,8 @@
 package com.meet.pdf_marketplace.service;
 
-import com.meet.pdf_marketplace.dto.CreatePdfProductRequestDTO;
-import com.meet.pdf_marketplace.dto.PdfProductResponseDTO;
-import com.meet.pdf_marketplace.dto.UpdatePdfProductRequestDTO;
+import com.meet.pdf_marketplace.dto.product.CreatePdfProductRequestDTO;
+import com.meet.pdf_marketplace.dto.product.PdfProductResponseDTO;
+import com.meet.pdf_marketplace.dto.product.UpdatePdfProductRequestDTO;
 import com.meet.pdf_marketplace.entity.PdfProductEntity;
 import com.meet.pdf_marketplace.entity.UserEntity;
 import com.meet.pdf_marketplace.enums.PdfProductStatus;
@@ -24,7 +24,7 @@ public class PdfProductService {
     private final PdfProductRepository pdfProductRepository;
 
     /**
-     * Creates a PDF product for the current seller.
+     * Creates a PDF product for the current seller and sends it for admin review.
      * Returns the saved product details.
      */
     @Transactional
@@ -40,7 +40,7 @@ public class PdfProductService {
                 .fileKey(request.getFileKey())
                 .thumbnailKey(request.getThumbnailKey())
                 .category(request.getCategory())
-                .status(PdfProductStatus.DRAFT)
+                .status(PdfProductStatus.PENDING_APPROVAL)
                 .build();
 
         return toSellerResponse(pdfProductRepository.save(product));
@@ -213,3 +213,4 @@ public class PdfProductService {
                 .build();
     }
 }
+

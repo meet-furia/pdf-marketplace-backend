@@ -52,3 +52,4 @@ public class PdfProductEntity extends AbstractEntity {
     @Column(nullable = false)
     private PdfProductStatus status;
 }
+

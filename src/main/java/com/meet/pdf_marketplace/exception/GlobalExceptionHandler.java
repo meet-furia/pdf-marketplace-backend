@@ -1,6 +1,6 @@
 package com.meet.pdf_marketplace.exception;
 
-import com.meet.pdf_marketplace.dto.ErrorResponseDTO;
+import com.meet.pdf_marketplace.dto.common.ErrorResponseDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
@@ -143,3 +143,4 @@ public class GlobalExceptionHandler {
         );
     }
 }
+

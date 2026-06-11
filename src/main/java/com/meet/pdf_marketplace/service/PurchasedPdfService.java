@@ -1,8 +1,8 @@
 package com.meet.pdf_marketplace.service;
 
-import com.meet.pdf_marketplace.dto.DownloadAccessResponseDTO;
-import com.meet.pdf_marketplace.dto.GenerateDownloadUrlResponseDTO;
-import com.meet.pdf_marketplace.dto.PurchasedPdfResponseDTO;
+import com.meet.pdf_marketplace.dto.library.DownloadAccessResponseDTO;
+import com.meet.pdf_marketplace.dto.file.GenerateDownloadUrlResponseDTO;
+import com.meet.pdf_marketplace.dto.library.PurchasedPdfResponseDTO;
 import com.meet.pdf_marketplace.entity.PdfProductEntity;
 import com.meet.pdf_marketplace.entity.PurchasedPdfEntity;
 import com.meet.pdf_marketplace.entity.UserEntity;
@@ -120,3 +120,4 @@ public class PurchasedPdfService {
         return purchasedPdfRepository.existsByUserIdAndProductId(currentUser.getId(), product.getId());
     }
 }
+

@@ -36,3 +36,4 @@ public class PurchasedPdfAccessEntity extends AbstractEntity {
     @JoinColumn(name = "order_id", nullable = false)
     private OrderEntity order;
 }
+

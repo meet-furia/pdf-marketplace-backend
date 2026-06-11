@@ -1,7 +1,7 @@
 package com.meet.pdf_marketplace.service;
 
-import com.meet.pdf_marketplace.dto.RegisterUserRequestDTO;
-import com.meet.pdf_marketplace.dto.UserResponseDTO;
+import com.meet.pdf_marketplace.dto.auth.RegisterUserRequestDTO;
+import com.meet.pdf_marketplace.dto.user.UserResponseDTO;
 import com.meet.pdf_marketplace.entity.UserEntity;
 import com.meet.pdf_marketplace.enums.UserStatus;
 import com.meet.pdf_marketplace.repository.UserRepository;
@@ -63,6 +63,8 @@ public class AuthService {
                 .name(user.getName())
                 .status(user.getStatus())
                 .emailVerified(user.getEmailVerified())
+                .admin(user.getAdmin())
                 .build();
     }
 }
+

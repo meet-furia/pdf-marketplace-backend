@@ -8,6 +8,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -30,6 +31,10 @@ public class OrderEntity extends AbstractEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payment_id", unique = true)
+    private PaymentEntity payment;
+
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal totalAmount;
 
@@ -46,3 +51,4 @@ public class OrderEntity extends AbstractEntity {
     @Column(nullable = false)
     private OrderStatus status;
 }
+

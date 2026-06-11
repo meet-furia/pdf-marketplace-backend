@@ -1,13 +1,15 @@
 package com.meet.pdf_marketplace.service;
 
-import com.meet.pdf_marketplace.dto.AddCartItemRequestDTO;
-import com.meet.pdf_marketplace.dto.CartItemResponseDTO;
-import com.meet.pdf_marketplace.dto.CartResponseDTO;
+import com.meet.pdf_marketplace.dto.cart.AddCartItemRequestDTO;
+import com.meet.pdf_marketplace.dto.cart.CartItemResponseDTO;
+import com.meet.pdf_marketplace.dto.cart.CartResponseDTO;
+import com.meet.pdf_marketplace.entity.CartElementEntity;
 import com.meet.pdf_marketplace.entity.CartEntity;
-import com.meet.pdf_marketplace.entity.CartItemEntity;
 import com.meet.pdf_marketplace.entity.PdfProductEntity;
 import com.meet.pdf_marketplace.entity.UserEntity;
 import com.meet.pdf_marketplace.enums.CartStatus;
+import com.meet.pdf_marketplace.enums.PdfProductStatus;
+import com.meet.pdf_marketplace.exception.BadRequestException;
 import com.meet.pdf_marketplace.exception.ResourceNotFoundException;
 import com.meet.pdf_marketplace.repository.CartItemRepository;
 import com.meet.pdf_marketplace.repository.CartRepository;
@@ -52,6 +54,8 @@ public class CartService {
         CartEntity cart = getOrCreateCart(currentUser);
         PdfProductEntity product = findProduct(request.getProductId());
 
+        validateProductIsPublished(product);
+
         if (product.getSeller().getId().equals(currentUser.getId())) {
             throw new IllegalArgumentException("Buyer cannot add own product to cart");
         }
@@ -60,7 +64,7 @@ public class CartService {
             throw new IllegalArgumentException("Product already exists in active cart");
         }
 
-        CartItemEntity item = CartItemEntity.builder()
+        CartElementEntity item = CartElementEntity.builder()
                 .cart(cart)
                 .product(product)
                 .priceAtTime(product.getPrice())
@@ -72,13 +76,66 @@ public class CartService {
     }
 
     /**
+     * Freezes the active cart while payment is pending.
+     */
+    public CartEntity getOrCreatePaymentPendingCart(UserEntity currentUser) {
+
+        return cartRepository.findByUserIdAndStatus(currentUser.getId(), CartStatus.PAYMENT_PENDING)
+                .orElseGet(() -> {
+                    CartEntity cart = cartRepository.findByUserIdAndStatus(currentUser.getId(), CartStatus.ACTIVE)
+                            .orElseThrow(() -> new ResourceNotFoundException("Active cart not found"));
+
+                    requireCartTotal(cart);
+                    cart.setStatus(CartStatus.PAYMENT_PENDING);
+
+                    return cartRepository.save(cart);
+                });
+    }
+
+    /**
+     * Returns a non-zero cart total or fails when the cart is empty.
+     */
+    public BigDecimal requireCartTotal(CartEntity cart) {
+
+        CartEntity recalculatedCart = recalculateTotal(cart);
+
+        if (recalculatedCart.getTotalAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Cart must not be empty");
+        }
+
+        return recalculatedCart.getTotalAmount();
+    }
+
+    /**
+     * Releases a failed pending-payment cart back to active.
+     */
+    public CartEntity releasePaymentPendingCart(CartEntity cart) {
+
+        if (cart.getStatus() == CartStatus.PAYMENT_PENDING) {
+            cart.setStatus(CartStatus.ACTIVE);
+        }
+
+        return cartRepository.save(cart);
+    }
+
+    /**
+     * Marks a paid cart as checked out.
+     */
+    public CartEntity checkoutCart(CartEntity cart) {
+
+        cart.setStatus(CartStatus.CHECKED_OUT);
+
+        return cartRepository.save(cart);
+    }
+
+    /**
      * Removes one item from a cart.
      * Recalculates the cart total after removal.
      */
     @Transactional
     public CartResponseDTO removeItem(UserEntity currentUser, UUID cartItemId) {
 
-        CartItemEntity item = findCartItem(cartItemId);
+        CartElementEntity item = findCartItem(cartItemId);
         CartEntity cart = item.getCart();
 
         if (!cart.getUser().getId().equals(currentUser.getId())) {
@@ -99,7 +156,7 @@ public class CartService {
     public CartResponseDTO clear(UserEntity currentUser) {
 
         CartEntity cart = getOrCreateCart(currentUser);
-        List<CartItemEntity> items = cartItemRepository.findByCartId(cart.getId());
+        List<CartElementEntity> items = cartItemRepository.findByCartId(cart.getId());
 
         cartItemRepository.deleteAll(items);
         cartItemRepository.flush();
@@ -130,9 +187,19 @@ public class CartService {
     }
 
     /**
+     * Allows only approved and published products to be added to cart.
+     */
+    private void validateProductIsPublished(PdfProductEntity product) {
+
+        if (product.getStatus() != PdfProductStatus.PUBLISHED) {
+            throw new BadRequestException("Only published products can be added to cart");
+        }
+    }
+
+    /**
      * Loads a cart item or fails when the cart item does not exist.
      */
-    private CartItemEntity findCartItem(UUID cartItemId) {
+    private CartElementEntity findCartItem(UUID cartItemId) {
 
         return cartItemRepository.findById(cartItemId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cart item not found"));
@@ -145,7 +212,7 @@ public class CartService {
 
         BigDecimal totalAmount = cartItemRepository.findByCartId(cart.getId())
                 .stream()
-                .map(CartItemEntity::getPriceAtTime)
+                .map(CartElementEntity::getPriceAtTime)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         cart.setTotalAmount(totalAmount);
@@ -175,7 +242,7 @@ public class CartService {
     /**
      * Converts a cart item entity into a response DTO.
      */
-    private CartItemResponseDTO toItemResponse(CartItemEntity item) {
+    private CartItemResponseDTO toItemResponse(CartElementEntity item) {
 
         return CartItemResponseDTO.builder()
                 .id(item.getId())
@@ -186,3 +253,4 @@ public class CartService {
                 .build();
     }
 }
+

@@ -1,7 +1,7 @@
 package com.meet.pdf_marketplace.controller;
 
-import com.meet.pdf_marketplace.dto.ApiResponseDTO;
-import com.meet.pdf_marketplace.dto.OrderResponseDTO;
+import com.meet.pdf_marketplace.dto.common.ApiResponseDTO;
+import com.meet.pdf_marketplace.dto.order.OrderResponseDTO;
 import com.meet.pdf_marketplace.entity.UserEntity;
 import com.meet.pdf_marketplace.service.CurrentUserService;
 import com.meet.pdf_marketplace.service.OrderService;
@@ -27,20 +27,12 @@ public class OrderController {
     private final CurrentUserService currentUserService;
 
     /**
-     * Creates a pending order from the current user's active cart.
-     * The current user comes from the Supabase JWT.
+     * Disabled: orders are created only after successful payment verification.
      */
     @PostMapping("/from-cart")
     public ApiResponseDTO<OrderResponseDTO> createFromCart() {
 
-        UserEntity currentUser = currentUserService.getCurrentUser();
-        OrderResponseDTO order = orderService.createFromCart(currentUser);
-
-        return ApiResponseDTO.<OrderResponseDTO>builder()
-                .success(true)
-                .message("Order created successfully")
-                .data(order)
-                .build();
+        throw new IllegalArgumentException("Orders are created only after successful payment");
     }
 
     /**
@@ -79,3 +71,4 @@ public class OrderController {
                 .build();
     }
 }
+

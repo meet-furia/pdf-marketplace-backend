@@ -2,7 +2,6 @@ server.port=${SERVER_PORT:8081}
 spring.datasource.url=${DATABASE_URL:jdbc:postgresql://localhost:5432/pdf_marketplace}
 spring.datasource.username=${DATABASE_USERNAME:postgres}
 spring.datasource.password=${DATABASE_PASSWORD:postgres}
-admin.emails=${ADMIN_EMAILS:admin@example.com}
 supabase.url=${SUPABASE_URL:https://YOUR_PROJECT_REF.supabase.co}
 supabase.jwt.issuer-uri=${SUPABASE_JWT_ISSUER_URI:https://YOUR_PROJECT_REF.supabase.co/auth/v1}
 spring.security.oauth2.resourceserver.jwt.issuer-uri=${supabase.jwt.issuer-uri}

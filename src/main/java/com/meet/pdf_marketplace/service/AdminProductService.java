@@ -1,7 +1,7 @@
 package com.meet.pdf_marketplace.service;
 
-import com.meet.pdf_marketplace.dto.PdfProductResponseDTO;
-import com.meet.pdf_marketplace.dto.RejectProductRequestDTO;
+import com.meet.pdf_marketplace.dto.product.PdfProductResponseDTO;
+import com.meet.pdf_marketplace.dto.product.RejectProductRequestDTO;
 import com.meet.pdf_marketplace.entity.PdfProductEntity;
 import com.meet.pdf_marketplace.entity.UserEntity;
 import com.meet.pdf_marketplace.enums.PdfProductStatus;
@@ -9,11 +9,9 @@ import com.meet.pdf_marketplace.exception.ForbiddenOperationException;
 import com.meet.pdf_marketplace.exception.ResourceNotFoundException;
 import com.meet.pdf_marketplace.repository.PdfProductRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,12 +21,9 @@ public class AdminProductService {
 
     private final PdfProductRepository pdfProductRepository;
 
-    @Value("${admin.emails:}")
-    private String adminEmails;
-
     /**
      * Lists products waiting for admin approval.
-     * Only configured admin emails can access this list.
+     * Only users marked as admins can access this list.
      */
     @Transactional(readOnly = true)
     public List<PdfProductResponseDTO> getPendingProducts(UserEntity currentUser) {
@@ -43,7 +38,7 @@ public class AdminProductService {
 
     /**
      * Approves a product and publishes it to the marketplace.
-     * Only configured admin emails can approve products.
+     * Only users marked as admins can approve products.
      */
     @Transactional
     public PdfProductResponseDTO approveProduct(UserEntity currentUser, UUID productId) {
@@ -58,7 +53,7 @@ public class AdminProductService {
 
     /**
      * Rejects a product from publishing.
-     * Only configured admin emails can reject products.
+     * Only users marked as admins can reject products.
      */
     @Transactional
     public PdfProductResponseDTO rejectProduct(
@@ -76,16 +71,11 @@ public class AdminProductService {
     }
 
     /**
-     * Ensures the current user's email is configured as an admin.
+     * Ensures the current user is marked as an admin.
      */
     private void validateAdmin(UserEntity currentUser) {
 
-        boolean admin = Arrays.stream(adminEmails.split(","))
-                .map(String::trim)
-                .filter(email -> !email.isBlank())
-                .anyMatch(email -> email.equalsIgnoreCase(currentUser.getEmail()));
-
-        if (!admin) {
+        if (!Boolean.TRUE.equals(currentUser.getAdmin())) {
             throw new ForbiddenOperationException("Admin access is required");
         }
     }
@@ -118,3 +108,4 @@ public class AdminProductService {
                 .build();
     }
 }
+

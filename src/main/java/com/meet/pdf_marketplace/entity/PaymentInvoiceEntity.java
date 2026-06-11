@@ -50,3 +50,4 @@ public class PaymentInvoiceEntity extends AbstractEntity {
 
     private String paymentMethod;
 }
+

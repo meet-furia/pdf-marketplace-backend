@@ -17,3 +17,4 @@ public class RazorpayProperties {
 
     private String currency = "INR";
 }
+

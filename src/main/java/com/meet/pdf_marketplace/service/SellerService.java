@@ -1,8 +1,8 @@
 package com.meet.pdf_marketplace.service;
 
-import com.meet.pdf_marketplace.dto.SellerDashboardResponseDTO;
-import com.meet.pdf_marketplace.dto.SellerPaymentDetailsRequestDTO;
-import com.meet.pdf_marketplace.dto.SellerPaymentDetailsResponseDTO;
+import com.meet.pdf_marketplace.dto.seller.SellerDashboardResponseDTO;
+import com.meet.pdf_marketplace.dto.seller.SellerPaymentDetailsRequestDTO;
+import com.meet.pdf_marketplace.dto.seller.SellerPaymentDetailsResponseDTO;
 import com.meet.pdf_marketplace.entity.OrderItemEntity;
 import com.meet.pdf_marketplace.entity.SellerPaymentDetailsEntity;
 import com.meet.pdf_marketplace.entity.UserEntity;
@@ -116,3 +116,4 @@ public class SellerService {
         return "****" + accountNumber.substring(accountNumber.length() - 4);
     }
 }
+

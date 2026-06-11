@@ -1,9 +1,9 @@
 package com.meet.pdf_marketplace.service;
 
 import com.meet.pdf_marketplace.config.R2Properties;
-import com.meet.pdf_marketplace.dto.GenerateDownloadUrlResponseDTO;
-import com.meet.pdf_marketplace.dto.GenerateUploadUrlRequestDTO;
-import com.meet.pdf_marketplace.dto.GenerateUploadUrlResponseDTO;
+import com.meet.pdf_marketplace.dto.file.GenerateDownloadUrlResponseDTO;
+import com.meet.pdf_marketplace.dto.file.GenerateUploadUrlRequestDTO;
+import com.meet.pdf_marketplace.dto.file.GenerateUploadUrlResponseDTO;
 import com.meet.pdf_marketplace.entity.PdfProductEntity;
 import com.meet.pdf_marketplace.entity.UserEntity;
 import com.meet.pdf_marketplace.exception.ResourceNotFoundException;
@@ -72,6 +72,7 @@ public class R2StorageService {
 
         return GenerateUploadUrlResponseDTO.builder()
                 .uploadUrl(createPresigner().presignPutObject(presignRequest).url().toString())
+                .uploadMethod("PUT")
                 .fileKey(fileKey)
                 .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plus(UPLOAD_URL_DURATION))
                 .build();
@@ -249,3 +250,4 @@ public class R2StorageService {
         return value == null || value.isBlank();
     }
 }
+

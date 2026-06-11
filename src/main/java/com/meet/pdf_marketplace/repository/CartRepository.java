@@ -10,3 +10,4 @@ public interface CartRepository extends AbstractRepository<CartEntity, UUID> {
 
     Optional<CartEntity> findByUserIdAndStatus(UUID userId, CartStatus status);
 }
+

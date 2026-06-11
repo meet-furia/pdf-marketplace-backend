@@ -7,3 +7,4 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties(R2Properties.class)
 public class R2Config {
 }
+

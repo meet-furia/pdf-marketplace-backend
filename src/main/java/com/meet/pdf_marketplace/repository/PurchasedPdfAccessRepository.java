@@ -8,3 +8,4 @@ public interface PurchasedPdfAccessRepository extends AbstractRepository<Purchas
 
     boolean existsByUserIdAndProductId(UUID userId, UUID productId);
 }
+

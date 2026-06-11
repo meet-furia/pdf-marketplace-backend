@@ -11,3 +11,4 @@ public interface PurchasedPdfRepository extends AbstractRepository<PurchasedPdfE
 
     boolean existsByUserIdAndProductId(UUID userId, UUID productId);
 }
+

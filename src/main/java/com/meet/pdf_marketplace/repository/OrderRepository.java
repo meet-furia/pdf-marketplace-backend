@@ -9,3 +9,4 @@ public interface OrderRepository extends AbstractRepository<OrderEntity, UUID> {
 
     List<OrderEntity> findByUserId(UUID userId);
 }
+

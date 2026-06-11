@@ -36,3 +36,4 @@ public class SellerPaymentDetailsEntity extends AbstractEntity {
 
     private String upiId;
 }
+

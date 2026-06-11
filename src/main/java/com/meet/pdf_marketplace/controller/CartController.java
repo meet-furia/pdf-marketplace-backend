@@ -1,21 +1,14 @@
 package com.meet.pdf_marketplace.controller;
 
-import com.meet.pdf_marketplace.dto.AddCartItemRequestDTO;
-import com.meet.pdf_marketplace.dto.ApiResponseDTO;
-import com.meet.pdf_marketplace.dto.CartResponseDTO;
+import com.meet.pdf_marketplace.dto.cart.AddCartItemRequestDTO;
+import com.meet.pdf_marketplace.dto.common.ApiResponseDTO;
+import com.meet.pdf_marketplace.dto.cart.CartResponseDTO;
 import com.meet.pdf_marketplace.entity.UserEntity;
 import com.meet.pdf_marketplace.service.CartService;
 import com.meet.pdf_marketplace.service.CurrentUserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
@@ -101,3 +94,4 @@ public class CartController {
                 .build();
     }
 }
+

@@ -9,3 +9,4 @@ public interface SellerPaymentDetailsRepository extends AbstractRepository<Selle
 
     Optional<SellerPaymentDetailsEntity> findBySellerId(UUID sellerId);
 }
+

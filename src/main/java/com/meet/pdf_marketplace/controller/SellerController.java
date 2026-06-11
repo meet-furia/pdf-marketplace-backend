@@ -1,9 +1,9 @@
 package com.meet.pdf_marketplace.controller;
 
-import com.meet.pdf_marketplace.dto.ApiResponseDTO;
-import com.meet.pdf_marketplace.dto.SellerDashboardResponseDTO;
-import com.meet.pdf_marketplace.dto.SellerPaymentDetailsRequestDTO;
-import com.meet.pdf_marketplace.dto.SellerPaymentDetailsResponseDTO;
+import com.meet.pdf_marketplace.dto.common.ApiResponseDTO;
+import com.meet.pdf_marketplace.dto.seller.SellerDashboardResponseDTO;
+import com.meet.pdf_marketplace.dto.seller.SellerPaymentDetailsRequestDTO;
+import com.meet.pdf_marketplace.dto.seller.SellerPaymentDetailsResponseDTO;
 import com.meet.pdf_marketplace.entity.UserEntity;
 import com.meet.pdf_marketplace.service.CurrentUserService;
 import com.meet.pdf_marketplace.service.SellerService;
@@ -79,3 +79,4 @@ public class SellerController {
                 .build();
     }
 }
+

@@ -1,13 +1,13 @@
 package com.meet.pdf_marketplace.controller;
 
-import com.meet.pdf_marketplace.dto.ApiResponseDTO;
-import com.meet.pdf_marketplace.dto.CreatePaymentRequestDTO;
-import com.meet.pdf_marketplace.dto.CreatePaymentResponseDTO;
-import com.meet.pdf_marketplace.dto.PaymentInvoiceResponseDTO;
-import com.meet.pdf_marketplace.dto.VerifyPaymentRequestDTO;
+import com.meet.pdf_marketplace.dto.common.ApiResponseDTO;
+import com.meet.pdf_marketplace.dto.payment.CreatePaymentRequestDTO;
+import com.meet.pdf_marketplace.dto.payment.CreatePaymentResponseDTO;
+import com.meet.pdf_marketplace.dto.payment.PaymentInvoiceResponseDTO;
+import com.meet.pdf_marketplace.dto.payment.VerifyPaymentRequestDTO;
 import com.meet.pdf_marketplace.entity.UserEntity;
+import com.meet.pdf_marketplace.service.CheckoutService;
 import com.meet.pdf_marketplace.service.CurrentUserService;
-import com.meet.pdf_marketplace.service.RazorpayService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -22,13 +22,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/payments")
 public class PaymentController {
 
-    private final RazorpayService razorpayService;
+    private final CheckoutService checkoutService;
 
     private final CurrentUserService currentUserService;
 
     /**
-     * Creates a Razorpay order for a pending local order.
-     * Returns the Razorpay order id and local invoice details.
+     * Creates a payment from the active cart.
+     * The order and invoice are created only after successful payment verification.
      */
     @PostMapping("/create")
     public ApiResponseDTO<CreatePaymentResponseDTO> createPayment(
@@ -36,7 +36,7 @@ public class PaymentController {
     ) {
 
         UserEntity currentUser = currentUserService.getCurrentUser();
-        CreatePaymentResponseDTO payment = razorpayService.createPayment(currentUser, request);
+        CreatePaymentResponseDTO payment = checkoutService.createPayment(currentUser, request);
 
         return ApiResponseDTO.<CreatePaymentResponseDTO>builder()
                 .success(true)
@@ -46,8 +46,7 @@ public class PaymentController {
     }
 
     /**
-     * Verifies a Razorpay payment signature.
-     * Marks payment and order as paid only after verification succeeds.
+     * Verifies a Razorpay payment signature and completes checkout.
      */
     @PostMapping("/verify")
     public ApiResponseDTO<PaymentInvoiceResponseDTO> verifyPayment(
@@ -55,7 +54,7 @@ public class PaymentController {
     ) {
 
         UserEntity currentUser = currentUserService.getCurrentUser();
-        PaymentInvoiceResponseDTO payment = razorpayService.verifyPayment(currentUser, request);
+        PaymentInvoiceResponseDTO payment = checkoutService.verifyPayment(currentUser, request);
 
         return ApiResponseDTO.<PaymentInvoiceResponseDTO>builder()
                 .success(true)
@@ -64,3 +63,4 @@ public class PaymentController {
                 .build();
     }
 }
+

@@ -35,3 +35,4 @@ public class CurrentUserService {
                 .orElseThrow(() -> new ResourceNotFoundException("Current user not found"));
     }
 }
+

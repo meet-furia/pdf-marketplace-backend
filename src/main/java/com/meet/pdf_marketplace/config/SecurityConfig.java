@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -34,6 +35,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/register").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/products").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/published").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/{productId}").permitAll()
                         .anyRequest().authenticated()
@@ -44,6 +46,7 @@ public class SecurityConfig {
 
     /**
      * Builds a JWT decoder using Supabase JWK URL directly.
+     * Supabase asymmetric JWTs can use ES256, so the decoder must allow it.
      */
     @Bean
     public JwtDecoder jwtDecoder() {
@@ -52,7 +55,9 @@ public class SecurityConfig {
             throw new IllegalArgumentException("Supabase JWK set URI is not configured");
         }
 
-        return NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
+        return NimbusJwtDecoder.withJwkSetUri(jwkSetUri)
+                .jwsAlgorithm(SignatureAlgorithm.ES256)
+                .build();
     }
 
     /**
@@ -74,3 +79,4 @@ public class SecurityConfig {
         return source;
     }
 }
+

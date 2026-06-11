@@ -1,7 +1,7 @@
 package com.meet.pdf_marketplace.controller;
 
-import com.meet.pdf_marketplace.dto.ApiResponseDTO;
-import com.meet.pdf_marketplace.dto.UserResponseDTO;
+import com.meet.pdf_marketplace.dto.common.ApiResponseDTO;
+import com.meet.pdf_marketplace.dto.user.UserResponseDTO;
 import com.meet.pdf_marketplace.entity.UserEntity;
 import com.meet.pdf_marketplace.service.CurrentUserService;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +45,8 @@ public class UserController {
                 .name(user.getName())
                 .status(user.getStatus())
                 .emailVerified(user.getEmailVerified())
+                .admin(user.getAdmin())
                 .build();
     }
 }
+

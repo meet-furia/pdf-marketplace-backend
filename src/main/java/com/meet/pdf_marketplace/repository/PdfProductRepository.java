@@ -19,3 +19,4 @@ public interface PdfProductRepository extends AbstractRepository<PdfProductEntit
 
     Optional<PdfProductEntity> findByFileKey(String fileKey);
 }
+

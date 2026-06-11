@@ -21,3 +21,4 @@ public class R2Properties {
 
     private String publicBaseUrl;
 }
+

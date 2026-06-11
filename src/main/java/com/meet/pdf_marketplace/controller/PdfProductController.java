@@ -1,9 +1,9 @@
 package com.meet.pdf_marketplace.controller;
 
-import com.meet.pdf_marketplace.dto.ApiResponseDTO;
-import com.meet.pdf_marketplace.dto.CreatePdfProductRequestDTO;
-import com.meet.pdf_marketplace.dto.PdfProductResponseDTO;
-import com.meet.pdf_marketplace.dto.UpdatePdfProductRequestDTO;
+import com.meet.pdf_marketplace.dto.common.ApiResponseDTO;
+import com.meet.pdf_marketplace.dto.product.CreatePdfProductRequestDTO;
+import com.meet.pdf_marketplace.dto.product.PdfProductResponseDTO;
+import com.meet.pdf_marketplace.dto.product.UpdatePdfProductRequestDTO;
 import com.meet.pdf_marketplace.entity.UserEntity;
 import com.meet.pdf_marketplace.service.CurrentUserService;
 import com.meet.pdf_marketplace.service.PdfProductService;
@@ -149,3 +149,4 @@ public class PdfProductController {
     }
 
 }
+

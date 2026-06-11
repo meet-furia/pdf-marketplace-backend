@@ -1,8 +1,8 @@
 package com.meet.pdf_marketplace.controller;
 
-import com.meet.pdf_marketplace.dto.ApiResponseDTO;
-import com.meet.pdf_marketplace.dto.RegisterUserRequestDTO;
-import com.meet.pdf_marketplace.dto.UserResponseDTO;
+import com.meet.pdf_marketplace.dto.common.ApiResponseDTO;
+import com.meet.pdf_marketplace.dto.auth.RegisterUserRequestDTO;
+import com.meet.pdf_marketplace.dto.user.UserResponseDTO;
 import com.meet.pdf_marketplace.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -41,3 +41,4 @@ public class AuthController {
                 .build();
     }
 }
+

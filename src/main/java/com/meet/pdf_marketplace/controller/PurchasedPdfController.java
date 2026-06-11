@@ -1,8 +1,8 @@
 package com.meet.pdf_marketplace.controller;
 
-import com.meet.pdf_marketplace.dto.ApiResponseDTO;
-import com.meet.pdf_marketplace.dto.DownloadAccessResponseDTO;
-import com.meet.pdf_marketplace.dto.PurchasedPdfResponseDTO;
+import com.meet.pdf_marketplace.dto.common.ApiResponseDTO;
+import com.meet.pdf_marketplace.dto.library.DownloadAccessResponseDTO;
+import com.meet.pdf_marketplace.dto.library.PurchasedPdfResponseDTO;
 import com.meet.pdf_marketplace.entity.UserEntity;
 import com.meet.pdf_marketplace.service.CurrentUserService;
 import com.meet.pdf_marketplace.service.PurchasedPdfService;
@@ -81,3 +81,4 @@ public class PurchasedPdfController {
                 .build();
     }
 }
+

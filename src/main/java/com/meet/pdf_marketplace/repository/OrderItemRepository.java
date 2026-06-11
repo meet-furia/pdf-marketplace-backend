@@ -11,3 +11,4 @@ public interface OrderItemRepository extends AbstractRepository<OrderItemEntity,
 
     List<OrderItemEntity> findByProductSellerId(UUID sellerId);
 }
+

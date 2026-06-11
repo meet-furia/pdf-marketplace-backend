@@ -1,17 +1,11 @@
 package com.meet.pdf_marketplace.service;
 
-import com.meet.pdf_marketplace.dto.OrderItemResponseDTO;
-import com.meet.pdf_marketplace.dto.OrderResponseDTO;
-import com.meet.pdf_marketplace.entity.CartEntity;
-import com.meet.pdf_marketplace.entity.CartItemEntity;
-import com.meet.pdf_marketplace.entity.OrderEntity;
-import com.meet.pdf_marketplace.entity.OrderItemEntity;
-import com.meet.pdf_marketplace.entity.UserEntity;
-import com.meet.pdf_marketplace.enums.CartStatus;
+import com.meet.pdf_marketplace.dto.order.OrderItemResponseDTO;
+import com.meet.pdf_marketplace.dto.order.OrderResponseDTO;
+import com.meet.pdf_marketplace.entity.*;
 import com.meet.pdf_marketplace.enums.OrderStatus;
 import com.meet.pdf_marketplace.exception.ResourceNotFoundException;
 import com.meet.pdf_marketplace.repository.CartItemRepository;
-import com.meet.pdf_marketplace.repository.CartRepository;
 import com.meet.pdf_marketplace.repository.OrderItemRepository;
 import com.meet.pdf_marketplace.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,27 +23,31 @@ public class OrderService {
 
     private static final BigDecimal PLATFORM_FEE_RATE = new BigDecimal("0.10");
 
-    private static final String DEFAULT_CURRENCY = "INR";
-
     private final OrderRepository orderRepository;
 
     private final OrderItemRepository orderItemRepository;
 
-    private final CartRepository cartRepository;
-
     private final CartItemRepository cartItemRepository;
 
     /**
-     * Creates a pending order from the current user's active cart.
-     * Copies item prices and marks the cart as checked out.
+     * Orders are created only by checkout after payment verification succeeds.
      */
-    @Transactional
     public OrderResponseDTO createFromCart(UserEntity currentUser) {
 
-        CartEntity cart = cartRepository.findByUserIdAndStatus(currentUser.getId(), CartStatus.ACTIVE)
-                .orElseThrow(() -> new ResourceNotFoundException("Active cart not found"));
+        throw new IllegalArgumentException("Orders are created only after successful payment");
+    }
 
-        List<CartItemEntity> cartItems = cartItemRepository.findByCartId(cart.getId());
+    /**
+     * Creates an order from a paid payment and its frozen cart.
+     * Duplicate calls return the already-created order.
+     */
+    public OrderEntity createFromPaidPayment(PaymentEntity payment) {
+
+        if (payment.getOrder() != null) {
+            return payment.getOrder();
+        }
+
+        List<CartElementEntity> cartItems = cartItemRepository.findByCartId(payment.getCart().getId());
 
         if (cartItems.isEmpty()) {
             throw new IllegalArgumentException("Cart must not be empty");
@@ -57,18 +55,18 @@ public class OrderService {
 
         BigDecimal totalAmount = sumPrices(cartItems);
         BigDecimal platformFee = calculatePlatformFee(totalAmount);
-        BigDecimal sellerEarning = totalAmount.subtract(platformFee);
 
         OrderEntity order = orderRepository.save(OrderEntity.builder()
-                .user(currentUser)
+                .user(payment.getUser())
+                .payment(payment)
                 .totalAmount(totalAmount)
                 .platformFee(platformFee)
-                .sellerEarning(sellerEarning)
-                .currency(DEFAULT_CURRENCY)
-                .status(OrderStatus.PENDING)
+                .sellerEarning(totalAmount.subtract(platformFee))
+                .currency(payment.getCurrency())
+                .status(OrderStatus.PAID)
                 .build());
 
-        for (CartItemEntity cartItem : cartItems) {
+        for (CartElementEntity cartItem : cartItems) {
             BigDecimal itemPlatformFee = calculatePlatformFee(cartItem.getPriceAtTime());
 
             orderItemRepository.save(OrderItemEntity.builder()
@@ -80,10 +78,9 @@ public class OrderService {
                     .build());
         }
 
-        cart.setStatus(CartStatus.CHECKED_OUT);
-        cartRepository.save(cart);
+        payment.setOrder(order);
 
-        return toResponse(order);
+        return order;
     }
 
     /**
@@ -135,10 +132,10 @@ public class OrderService {
     /**
      * Sums cart item prices to get the order total.
      */
-    private BigDecimal sumPrices(List<CartItemEntity> cartItems) {
+    private BigDecimal sumPrices(List<CartElementEntity> cartItems) {
 
         return cartItems.stream()
-                .map(CartItemEntity::getPriceAtTime)
+                .map(CartElementEntity::getPriceAtTime)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
@@ -181,3 +178,4 @@ public class OrderService {
                 .build();
     }
 }
+

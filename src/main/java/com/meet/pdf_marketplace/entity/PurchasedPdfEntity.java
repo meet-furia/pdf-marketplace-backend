@@ -42,3 +42,4 @@ public class PurchasedPdfEntity extends AbstractEntity {
     @Column(nullable = false)
     private LocalDateTime accessGrantedAt;
 }
+

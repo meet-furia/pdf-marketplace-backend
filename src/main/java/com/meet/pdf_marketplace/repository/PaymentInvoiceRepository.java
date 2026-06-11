@@ -11,3 +11,4 @@ public interface PaymentInvoiceRepository extends AbstractRepository<PaymentInvo
 
     Optional<PaymentInvoiceEntity> findByRazorpayOrderId(String razorpayOrderId);
 }
+

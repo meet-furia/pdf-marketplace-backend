@@ -1,8 +1,8 @@
 package com.meet.pdf_marketplace.controller;
 
-import com.meet.pdf_marketplace.dto.ApiResponseDTO;
-import com.meet.pdf_marketplace.dto.PdfProductResponseDTO;
-import com.meet.pdf_marketplace.dto.RejectProductRequestDTO;
+import com.meet.pdf_marketplace.dto.common.ApiResponseDTO;
+import com.meet.pdf_marketplace.dto.product.PdfProductResponseDTO;
+import com.meet.pdf_marketplace.dto.product.RejectProductRequestDTO;
 import com.meet.pdf_marketplace.entity.UserEntity;
 import com.meet.pdf_marketplace.service.AdminProductService;
 import com.meet.pdf_marketplace.service.CurrentUserService;
@@ -84,3 +84,4 @@ public class AdminProductController {
                 .build();
     }
 }
+
