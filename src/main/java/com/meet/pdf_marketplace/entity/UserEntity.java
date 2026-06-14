@@ -1,8 +1,13 @@
 package com.meet.pdf_marketplace.entity;
 
 import com.meet.pdf_marketplace.enums.UserStatus;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -33,6 +38,8 @@ public class UserEntity extends AbstractEntity {
     @Column(nullable = false)
     private Boolean emailVerified;
 
+    @Builder.Default
     @Column(nullable = false)
-    private Boolean admin;
+    private Boolean admin = false;
 }
+

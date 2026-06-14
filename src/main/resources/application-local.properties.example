@@ -1,0 +1,17 @@
+server.port=${SERVER_PORT:8081}
+spring.datasource.url=${DATABASE_URL:jdbc:postgresql://localhost:5432/pdf_marketplace}
+spring.datasource.username=${DATABASE_USERNAME:postgres}
+spring.datasource.password=${DATABASE_PASSWORD:postgres}
+supabase.url=${SUPABASE_URL:https://YOUR_PROJECT_REF.supabase.co}
+supabase.jwt.issuer-uri=${SUPABASE_JWT_ISSUER_URI:https://YOUR_PROJECT_REF.supabase.co/auth/v1}
+spring.security.oauth2.resourceserver.jwt.issuer-uri=${supabase.jwt.issuer-uri}
+supabase.jwt.jwk-set-uri=https://YOUR_PROJECT_REF.supabase.co/auth/v1/.well-known/jwks.json
+cloudflare.r2.account-id=${CLOUDFLARE_R2_ACCOUNT_ID:your-cloudflare-account-id}
+cloudflare.r2.access-key-id=${CLOUDFLARE_R2_ACCESS_KEY_ID:your-r2-access-key-id}
+cloudflare.r2.secret-access-key=${CLOUDFLARE_R2_SECRET_ACCESS_KEY:your-r2-secret-access-key}
+cloudflare.r2.bucket-name=${CLOUDFLARE_R2_BUCKET_NAME:your-r2-bucket-name}
+cloudflare.r2.endpoint=${CLOUDFLARE_R2_ENDPOINT:https://your-account-id.r2.cloudflarestorage.com}
+cloudflare.r2.public-base-url=${CLOUDFLARE_R2_PUBLIC_BASE_URL:}
+razorpay.key-id=${RAZORPAY_KEY_ID:your-razorpay-key-id}
+razorpay.key-secret=${RAZORPAY_KEY_SECRET:your-razorpay-key-secret}
+razorpay.currency=${RAZORPAY_CURRENCY:INR}

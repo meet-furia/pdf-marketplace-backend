@@ -1,4 +1,4 @@
-package com.meet.pdf_marketplace.dto;
+package com.meet.pdf_marketplace.dto.common;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
@@ -43,3 +43,4 @@ public class ApiResponseDTO<T> {
         private Long totalElements;
     }
 }
+
