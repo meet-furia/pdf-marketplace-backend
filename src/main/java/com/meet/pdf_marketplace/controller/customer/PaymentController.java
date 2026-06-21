@@ -1,4 +1,4 @@
-package com.meet.pdf_marketplace.controller;
+package com.meet.pdf_marketplace.controller.customer;
 
 import com.meet.pdf_marketplace.dto.common.ApiResponseDTO;
 import com.meet.pdf_marketplace.dto.payment.CreatePaymentRequestDTO;
@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
-@RequestMapping("/api/v1/payments")
+@RequestMapping("/api/v1/customer/payments")
 public class PaymentController {
 
     private final CheckoutService checkoutService;
@@ -27,10 +27,9 @@ public class PaymentController {
     private final CurrentUserService currentUserService;
 
     /**
-     * Creates a payment from the active cart.
-     * The order and invoice are created only after successful payment verification.
+     * Creates a payment from the current customer's active cart.
      */
-    @PostMapping("/create")
+    @PostMapping
     public ApiResponseDTO<CreatePaymentResponseDTO> createPayment(
             @Valid @RequestBody CreatePaymentRequestDTO request
     ) {

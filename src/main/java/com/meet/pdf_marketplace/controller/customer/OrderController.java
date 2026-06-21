@@ -1,4 +1,4 @@
-package com.meet.pdf_marketplace.controller;
+package com.meet.pdf_marketplace.controller.customer;
 
 import com.meet.pdf_marketplace.dto.common.ApiResponseDTO;
 import com.meet.pdf_marketplace.dto.order.OrderResponseDTO;
@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -19,7 +18,7 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
-@RequestMapping("/api/v1/orders")
+@RequestMapping("/api/v1/customer/orders")
 public class OrderController {
 
     private final OrderService orderService;
@@ -27,19 +26,9 @@ public class OrderController {
     private final CurrentUserService currentUserService;
 
     /**
-     * Disabled: orders are created only after successful payment verification.
+     * Lists orders for the current customer.
      */
-    @PostMapping("/from-cart")
-    public ApiResponseDTO<OrderResponseDTO> createFromCart() {
-
-        throw new IllegalArgumentException("Orders are created only after successful payment");
-    }
-
-    /**
-     * Lists orders for the current user.
-     * No user id is accepted from the frontend.
-     */
-    @GetMapping("/me")
+    @GetMapping
     public ApiResponseDTO<List<OrderResponseDTO>> getMyOrders() {
 
         UserEntity currentUser = currentUserService.getCurrentUser();
@@ -53,8 +42,7 @@ public class OrderController {
     }
 
     /**
-     * Gets one order owned by the current user.
-     * Users cannot fetch other users' orders.
+     * Gets one order owned by the current customer.
      */
     @GetMapping("/{orderId}")
     public ApiResponseDTO<OrderResponseDTO> getById(

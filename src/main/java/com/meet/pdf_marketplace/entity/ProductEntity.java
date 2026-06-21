@@ -1,14 +1,7 @@
 package com.meet.pdf_marketplace.entity;
 
 import com.meet.pdf_marketplace.enums.PdfProductStatus;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,8 +16,8 @@ import java.math.BigDecimal;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "pdf_products")
-public class PdfProductEntity extends AbstractEntity {
+@Table(name = "products")
+public class ProductEntity extends AbstractEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "seller_id", nullable = false)
@@ -43,6 +36,18 @@ public class PdfProductEntity extends AbstractEntity {
     private String fileKey;
 
     @Column
+    private String fileType;
+
+    @Column
+    private String fileContentType;
+
+    @Column
+    private String fileOriginalName;
+
+    @Column
+    private Long fileSizeBytes;
+
+    @Column
     private String thumbnailKey;
 
     @Column
@@ -52,4 +57,3 @@ public class PdfProductEntity extends AbstractEntity {
     @Column(nullable = false)
     private PdfProductStatus status;
 }
-

@@ -1,8 +1,8 @@
-package com.meet.pdf_marketplace.controller;
+package com.meet.pdf_marketplace.controller.customer;
 
 import com.meet.pdf_marketplace.dto.cart.AddCartItemRequestDTO;
-import com.meet.pdf_marketplace.dto.common.ApiResponseDTO;
 import com.meet.pdf_marketplace.dto.cart.CartResponseDTO;
+import com.meet.pdf_marketplace.dto.common.ApiResponseDTO;
 import com.meet.pdf_marketplace.entity.UserEntity;
 import com.meet.pdf_marketplace.service.CartService;
 import com.meet.pdf_marketplace.service.CurrentUserService;
@@ -15,22 +15,20 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
-@RequestMapping("/api/v1/cart")
+@RequestMapping("/api/v1/customer/cart")
 public class CartController {
 
     private final CartService cartService;
-
     private final CurrentUserService currentUserService;
 
     /**
-     * Gets the active cart for a user.
-     * Creates an empty active cart when one does not exist.
+     * Gets the current customer's active cart.
      */
-    @GetMapping("/me")
-    public ApiResponseDTO<CartResponseDTO> getMe() {
+    @GetMapping
+    public ApiResponseDTO<CartResponseDTO> getMyCart() {
 
         UserEntity currentUser = currentUserService.getCurrentUser();
-        CartResponseDTO cart = cartService.getOrCreateActiveCart(currentUser);
+        CartResponseDTO cart = cartService.getOrCreateMyActiveCart(currentUser);
 
         return ApiResponseDTO.<CartResponseDTO>builder()
                 .success(true)
@@ -40,16 +38,15 @@ public class CartController {
     }
 
     /**
-     * Adds a product to the user's active cart.
-     * Returns the updated cart with recalculated total.
+     * Adds a published product to the current customer's cart.
      */
     @PostMapping("/items")
-    public ApiResponseDTO<CartResponseDTO> addItem(
+    public ApiResponseDTO<CartResponseDTO> addItemToCart(
             @Valid @RequestBody AddCartItemRequestDTO request
     ) {
 
         UserEntity currentUser = currentUserService.getCurrentUser();
-        CartResponseDTO cart = cartService.addItem(currentUser, request);
+        CartResponseDTO cart = cartService.addProductToCart(currentUser, request);
 
         return ApiResponseDTO.<CartResponseDTO>builder()
                 .success(true)
@@ -59,16 +56,15 @@ public class CartController {
     }
 
     /**
-     * Removes a cart item by id.
-     * Returns the updated cart with recalculated total.
+     * Removes one cart item from the current customer's cart.
      */
     @DeleteMapping("/items/{cartItemId}")
-    public ApiResponseDTO<CartResponseDTO> removeItem(
+    public ApiResponseDTO<CartResponseDTO> removeItemFromCart(
             @PathVariable UUID cartItemId
     ) {
 
         UserEntity currentUser = currentUserService.getCurrentUser();
-        CartResponseDTO cart = cartService.removeItem(currentUser, cartItemId);
+        CartResponseDTO cart = cartService.removeItemFromCart(currentUser, cartItemId);
 
         return ApiResponseDTO.<CartResponseDTO>builder()
                 .success(true)
@@ -78,14 +74,13 @@ public class CartController {
     }
 
     /**
-     * Clears all items from the user's active cart.
-     * Returns the empty cart with total reset to zero.
+     * Clears all items from the current customer's active cart.
      */
-    @DeleteMapping("/clear")
-    public ApiResponseDTO<CartResponseDTO> clear() {
+    @DeleteMapping("/items")
+    public ApiResponseDTO<CartResponseDTO> clearMyCart() {
 
         UserEntity currentUser = currentUserService.getCurrentUser();
-        CartResponseDTO cart = cartService.clear(currentUser);
+        CartResponseDTO cart = cartService.clearCart(currentUser);
 
         return ApiResponseDTO.<CartResponseDTO>builder()
                 .success(true)
@@ -94,4 +89,3 @@ public class CartController {
                 .build();
     }
 }
-

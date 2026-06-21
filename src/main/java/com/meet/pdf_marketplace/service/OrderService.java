@@ -47,7 +47,7 @@ public class OrderService {
             return payment.getOrder();
         }
 
-        List<CartElementEntity> cartItems = cartItemRepository.findByCartId(payment.getCart().getId());
+        List<CartItemEntity> cartItems = cartItemRepository.findByCartId(payment.getCart().getId());
 
         if (cartItems.isEmpty()) {
             throw new IllegalArgumentException("Cart must not be empty");
@@ -66,7 +66,7 @@ public class OrderService {
                 .status(OrderStatus.PAID)
                 .build());
 
-        for (CartElementEntity cartItem : cartItems) {
+        for (CartItemEntity cartItem : cartItems) {
             BigDecimal itemPlatformFee = calculatePlatformFee(cartItem.getPriceAtTime());
 
             orderItemRepository.save(OrderItemEntity.builder()
@@ -132,10 +132,10 @@ public class OrderService {
     /**
      * Sums cart item prices to get the order total.
      */
-    private BigDecimal sumPrices(List<CartElementEntity> cartItems) {
+    private BigDecimal sumPrices(List<CartItemEntity> cartItems) {
 
         return cartItems.stream()
-                .map(CartElementEntity::getPriceAtTime)
+                .map(CartItemEntity::getPriceAtTime)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
