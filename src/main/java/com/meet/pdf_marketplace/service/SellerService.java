@@ -7,6 +7,7 @@ import com.meet.pdf_marketplace.entity.OrderItemEntity;
 import com.meet.pdf_marketplace.entity.SellerPaymentDetailsEntity;
 import com.meet.pdf_marketplace.entity.UserEntity;
 import com.meet.pdf_marketplace.enums.OrderStatus;
+import com.meet.pdf_marketplace.exception.BadRequestException;
 import com.meet.pdf_marketplace.repository.OrderItemRepository;
 import com.meet.pdf_marketplace.repository.SellerPaymentDetailsRepository;
 import lombok.RequiredArgsConstructor;
@@ -40,11 +41,25 @@ public class SellerService {
                         .seller(currentUser)
                         .build());
 
-        details.setAccountHolderName(request.getAccountHolderName());
-        details.setBankName(request.getBankName());
-        details.setAccountNumber(request.getAccountNumber());
-        details.setIfscCode(request.getIfscCode());
-        details.setUpiId(request.getUpiId());
+        String accountHolderName = normalizeRequiredText(request.getAccountHolderName());
+        String bankName = normalizeOptionalText(request.getBankName());
+        String accountNumber = normalizeOptionalText(request.getAccountNumber());
+        String ifscCode = normalizeOptionalText(request.getIfscCode());
+        String upiId = normalizeOptionalText(request.getUpiId());
+
+        // The response only exposes a masked account number. A blank value on update
+        // therefore means "keep the existing account number".
+        if (accountNumber == null) {
+            accountNumber = details.getAccountNumber();
+        }
+
+        validatePayoutMethod(bankName, accountNumber, ifscCode, upiId);
+
+        details.setAccountHolderName(accountHolderName);
+        details.setBankName(bankName);
+        details.setAccountNumber(accountNumber);
+        details.setIfscCode(ifscCode == null ? null : ifscCode.toUpperCase());
+        details.setUpiId(upiId);
 
         return toPaymentResponse(sellerPaymentDetailsRepository.save(details));
     }
@@ -114,6 +129,40 @@ public class SellerService {
         }
 
         return "****" + accountNumber.substring(accountNumber.length() - 4);
+    }
+
+    private void validatePayoutMethod(
+            String bankName,
+            String accountNumber,
+            String ifscCode,
+            String upiId
+    ) {
+
+        boolean hasAnyBankDetail = bankName != null || accountNumber != null || ifscCode != null;
+        boolean hasCompleteBankDetails = bankName != null && accountNumber != null && ifscCode != null;
+        boolean hasUpiId = upiId != null;
+
+        if (hasAnyBankDetail && !hasCompleteBankDetails) {
+            throw new BadRequestException("Bank name, account number, and IFSC code are all required for bank payouts");
+        }
+
+        if (!hasCompleteBankDetails && !hasUpiId) {
+            throw new BadRequestException("Provide complete bank details or a UPI ID");
+        }
+    }
+
+    private String normalizeRequiredText(String value) {
+
+        return value.trim();
+    }
+
+    private String normalizeOptionalText(String value) {
+
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+
+        return value.trim();
     }
 }
 

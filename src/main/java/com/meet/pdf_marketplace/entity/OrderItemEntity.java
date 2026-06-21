@@ -29,7 +29,7 @@ public class OrderItemEntity extends AbstractEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "product_id", nullable = false)
-    private PdfProductEntity product;
+    private ProductEntity product;
 
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal priceAtPurchase;
@@ -40,4 +40,5 @@ public class OrderItemEntity extends AbstractEntity {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal sellerEarning;
 }
+
 

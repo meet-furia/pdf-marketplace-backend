@@ -7,13 +7,18 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PdfProductResponseDTO {
+public class ProductResponseDTO {
+
+    private LocalDateTime createdAt;
+
+    private String createdBy;
 
     private UUID id;
 
@@ -27,9 +32,17 @@ public class PdfProductResponseDTO {
 
     private BigDecimal price;
 
-    private String fileKey;
+    private String fileType;
+
+    private String fileContentType;
+
+    private String fileOriginalName;
+
+    private Long fileSizeBytes;
 
     private String thumbnailKey;
+
+    private String thumbnailUrl;
 
     private String category;
 

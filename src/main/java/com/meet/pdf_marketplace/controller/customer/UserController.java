@@ -1,4 +1,4 @@
-package com.meet.pdf_marketplace.controller;
+package com.meet.pdf_marketplace.controller.customer;
 
 import com.meet.pdf_marketplace.dto.common.ApiResponseDTO;
 import com.meet.pdf_marketplace.dto.user.UserResponseDTO;
@@ -13,13 +13,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
-@RequestMapping("/api/v1/users")
+@RequestMapping("/api/v1/customer/users")
 public class UserController {
 
     private final CurrentUserService currentUserService;
 
     /**
-     * Returns the local user mapped to the current Supabase JWT.
+     * Returns the customer profile mapped to the current Supabase JWT.
      */
     @GetMapping("/me")
     public ApiResponseDTO<UserResponseDTO> getMe() {
@@ -33,9 +33,6 @@ public class UserController {
                 .build();
     }
 
-    /**
-     * Converts the current user entity into a response DTO.
-     */
     private UserResponseDTO toResponse(UserEntity user) {
 
         return UserResponseDTO.builder()

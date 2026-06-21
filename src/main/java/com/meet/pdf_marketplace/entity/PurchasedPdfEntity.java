@@ -33,7 +33,7 @@ public class PurchasedPdfEntity extends AbstractEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "product_id", nullable = false)
-    private PdfProductEntity product;
+    private ProductEntity product;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "order_id", nullable = false)
@@ -42,4 +42,5 @@ public class PurchasedPdfEntity extends AbstractEntity {
     @Column(nullable = false)
     private LocalDateTime accessGrantedAt;
 }
+
 

@@ -20,8 +20,11 @@ public class CartItemResponseDTO {
 
     private String productTitle;
 
+    private String fileType;
+
     private String thumbnailKey;
+
+    private BigDecimal currentPrice;
 
     private BigDecimal priceAtTime;
 }
-

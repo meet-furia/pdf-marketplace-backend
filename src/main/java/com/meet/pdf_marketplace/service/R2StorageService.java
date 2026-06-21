@@ -2,115 +2,201 @@ package com.meet.pdf_marketplace.service;
 
 import com.meet.pdf_marketplace.config.R2Properties;
 import com.meet.pdf_marketplace.dto.file.GenerateDownloadUrlResponseDTO;
-import com.meet.pdf_marketplace.dto.file.GenerateUploadUrlRequestDTO;
-import com.meet.pdf_marketplace.dto.file.GenerateUploadUrlResponseDTO;
-import com.meet.pdf_marketplace.entity.PdfProductEntity;
+import com.meet.pdf_marketplace.entity.ProductEntity;
 import com.meet.pdf_marketplace.entity.UserEntity;
 import com.meet.pdf_marketplace.exception.ResourceNotFoundException;
-import com.meet.pdf_marketplace.repository.PdfProductRepository;
+import com.meet.pdf_marketplace.repository.ProductRepository;
 import com.meet.pdf_marketplace.repository.PurchasedPdfRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
-import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
+import java.io.IOException;
+import java.net.URI;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.net.URI;
-import java.util.Locale;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class R2StorageService {
 
-    private static final Duration UPLOAD_URL_DURATION = Duration.ofMinutes(10);
-
     private static final Duration DOWNLOAD_URL_DURATION = Duration.ofMinutes(5);
 
-    private static final long MAX_PDF_SIZE = 50L * 1024L * 1024L;
+    private static final String PRODUCT_FILE_TYPE = "PRODUCT";
 
-    private static final long MAX_THUMBNAIL_SIZE = 5L * 1024L * 1024L;
+    private static final String THUMBNAIL_FILE_TYPE = "THUMBNAIL";
 
     private final R2Properties r2Properties;
 
-    private final PdfProductRepository pdfProductRepository;
+    private final ProductRepository productRepository;
 
     private final PurchasedPdfRepository purchasedPdfRepository;
 
+    private final FileUploadValidator fileUploadValidator;
+
     /**
-     * Generates a presigned R2 upload URL for the current user.
-     * Upload keys are scoped by file type and user id.
+     * Uploads the main digital product file to private Cloudflare R2 storage.
      */
-    public GenerateUploadUrlResponseDTO generateUploadUrl(
-            UserEntity currentUser,
-            GenerateUploadUrlRequestDTO request
-    ) {
+    public StoredFile uploadProductFile(UserEntity currentUser, MultipartFile file) {
 
-        validateUploadRequest(request);
+        UploadFileDetails fileDetails = validateAndBuildFileDetails(file, PRODUCT_FILE_TYPE);
 
-        String fileKey = buildFileKey(currentUser, request);
+        return uploadFile(currentUser, file, fileDetails);
+    }
+
+    /**
+     * Uploads the optional product thumbnail image to private Cloudflare R2 storage.
+     */
+    public StoredFile uploadThumbnailFile(UserEntity currentUser, MultipartFile file) {
+
+        UploadFileDetails fileDetails = validateAndBuildFileDetails(file, THUMBNAIL_FILE_TYPE);
+
+        return uploadFile(currentUser, file, fileDetails);
+    }
+
+    private UploadFileDetails validateAndBuildFileDetails(MultipartFile file, String requestedFileType) {
+
+        UploadFileDetails fileDetails = buildFileDetails(file, requestedFileType);
+
+        validateBasicUploadDetails(fileDetails);
+
+        if (PRODUCT_FILE_TYPE.equals(requestedFileType)) {
+            fileUploadValidator.validateProductFile(
+                    fileDetails.fileName(),
+                    fileDetails.contentType(),
+                    fileDetails.fileSize()
+            );
+
+            return new UploadFileDetails(
+                    fileDetails.fileName(),
+                    fileDetails.contentType(),
+                    fileUploadValidator.determineProductFileType(fileDetails.fileName()),
+                    fileDetails.fileSize()
+            );
+        }
+
+        if (THUMBNAIL_FILE_TYPE.equals(requestedFileType)) {
+            fileUploadValidator.validateThumbnailFile(
+                    fileDetails.fileName(),
+                    fileDetails.contentType(),
+                    fileDetails.fileSize()
+            );
+            return fileDetails;
+        }
+
+        throw new IllegalArgumentException("Unsupported upload file type");
+    }
+
+    private UploadFileDetails buildFileDetails(MultipartFile file, String requestedFileType) {
+
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File is required");
+        }
+
+        return new UploadFileDetails(
+                file.getOriginalFilename(),
+                file.getContentType(),
+                requestedFileType,
+                file.getSize()
+        );
+    }
+
+    private StoredFile uploadFile(UserEntity currentUser, MultipartFile file, UploadFileDetails fileDetails) {
+
+        String fileKey = buildFileKey(currentUser, fileDetails);
 
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(r2Properties.getBucketName())
                 .key(fileKey)
-                .contentType(request.getContentType())
+                .contentType(fileDetails.contentType())
+                .contentDisposition("attachment; filename=\"" + sanitizeFileName(fileDetails.fileName()) + "\"")
+                .contentLength(fileDetails.fileSize())
                 .build();
 
-        PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
-                .signatureDuration(UPLOAD_URL_DURATION)
-                .putObjectRequest(putObjectRequest)
-                .build();
+        log.info("Uploading file to R2. userId={}, fileKey={}", currentUser.getId(), fileKey);
 
-        return GenerateUploadUrlResponseDTO.builder()
-                .uploadUrl(createPresigner().presignPutObject(presignRequest).url().toString())
-                .uploadMethod("PUT")
-                .fileKey(fileKey)
-                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plus(UPLOAD_URL_DURATION))
-                .build();
+        try (S3Client s3Client = createS3Client()) {
+            s3Client.putObject(
+                    putObjectRequest,
+                    RequestBody.fromInputStream(file.getInputStream(), fileDetails.fileSize())
+            );
+        } catch (IOException exception) {
+            log.error("Unable to read uploaded file. userId={}", currentUser.getId(), exception);
+            throw new IllegalArgumentException("Unable to read uploaded file");
+        } catch (S3Exception exception) {
+            log.error("Failed to upload file to R2. userId={}, fileKey={}", currentUser.getId(), fileKey, exception);
+            throw new IllegalArgumentException("Failed to upload file to storage");
+        }
+
+        log.info("File uploaded successfully to R2. userId={}, fileKey={}", currentUser.getId(), fileKey);
+
+        return new StoredFile(
+                fileKey,
+                fileDetails.fileType(),
+                fileDetails.contentType(),
+                fileDetails.fileName(),
+                fileDetails.fileSize()
+        );
     }
 
     /**
-     * Generates a short-lived R2 download URL after access is verified.
-     * Sellers can download their own PDF and buyers need a purchase record.
+     * Deletes a file from R2.
      */
-    @Transactional(readOnly = true)
-    public GenerateDownloadUrlResponseDTO generateDownloadUrl(UserEntity currentUser, String fileKey) {
+    public void deleteFile(String fileKey) {
 
-        PdfProductEntity product = pdfProductRepository.findByFileKey(fileKey)
-                .orElseThrow(() -> new ResourceNotFoundException("PDF file not found"));
-
-        if (!hasAccess(currentUser, product)) {
-            throw new IllegalArgumentException("Current user does not have access to this PDF");
+        if (isBlank(fileKey)) {
+            return;
         }
 
-        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+        DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
                 .bucket(r2Properties.getBucketName())
                 .key(fileKey)
                 .build();
 
-        GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
-                .signatureDuration(DOWNLOAD_URL_DURATION)
-                .getObjectRequest(getObjectRequest)
-                .build();
+        log.info("Deleting file from R2. fileKey={}", fileKey);
 
-        return GenerateDownloadUrlResponseDTO.builder()
-                .downloadUrl(createPresigner().presignGetObject(presignRequest).url().toString())
-                .fileKey(fileKey)
-                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plus(DOWNLOAD_URL_DURATION))
-                .build();
+        try (S3Client s3Client = createS3Client()) {
+            s3Client.deleteObject(deleteObjectRequest);
+        } catch (S3Exception exception) {
+            log.error("Failed to delete file from R2. fileKey={}", fileKey, exception);
+            throw new IllegalArgumentException("Failed to delete file from storage");
+        }
     }
 
     /**
-     * Generates a short-lived R2 download URL for an already-authorized file key.
+     * Generates a short-lived download URL after checking seller or buyer access.
+     */
+    @Transactional(readOnly = true)
+    public GenerateDownloadUrlResponseDTO generateDownloadUrl(UserEntity currentUser, String fileKey) {
+
+        ProductEntity product = productRepository.findByFileKey(fileKey)
+                .orElseThrow(() -> new ResourceNotFoundException("Product file not found"));
+
+        if (!hasAccess(currentUser, product)) {
+            throw new IllegalArgumentException("Current user does not have access to this product file");
+        }
+
+        return generateAuthorizedDownloadUrl(fileKey);
+    }
+
+    /**
+     * Generates a short-lived download URL for an already-authorized file key.
      */
     public GenerateDownloadUrlResponseDTO generateAuthorizedDownloadUrl(String fileKey) {
 
@@ -124,22 +210,44 @@ public class R2StorageService {
                 .getObjectRequest(getObjectRequest)
                 .build();
 
+        String downloadUrl = createPresigner()
+                .presignGetObject(presignRequest)
+                .url()
+                .toString();
+
+        log.info("Generated download URL for fileKey={}", fileKey);
+
         return GenerateDownloadUrlResponseDTO.builder()
-                .downloadUrl(createPresigner().presignGetObject(presignRequest).url().toString())
+                .downloadUrl(downloadUrl)
                 .fileKey(fileKey)
                 .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plus(DOWNLOAD_URL_DURATION))
                 .build();
     }
 
-    private String buildFileKey(UserEntity currentUser, GenerateUploadUrlRequestDTO request) {
+    /**
+     * Builds a browser-accessible URL for a stored public-facing asset.
+     */
+    public String generateAssetUrl(String fileKey) {
 
-        String prefix = switch (normalizeFileType(request.getFileType())) {
-            case "PDF" -> "products/pdfs/";
-            case "THUMBNAIL" -> "products/thumbnails/";
-            default -> throw new IllegalArgumentException("File type must be PDF or THUMBNAIL");
+        if (isBlank(fileKey)) {
+            return null;
+        }
+
+        if (!isBlank(r2Properties.getPublicBaseUrl())) {
+            return r2Properties.getPublicBaseUrl().replaceAll("/+$", "") + "/" + fileKey;
+        }
+
+        return generateAuthorizedDownloadUrl(fileKey).getDownloadUrl();
+    }
+
+    private String buildFileKey(UserEntity currentUser, UploadFileDetails fileDetails) {
+
+        String prefix = switch (fileDetails.fileType()) {
+            case THUMBNAIL_FILE_TYPE -> "products/thumbnails/";
+            default -> "products/files/";
         };
 
-        return prefix + currentUser.getId() + "/" + UUID.randomUUID() + "-" + sanitizeFileName(request.getFileName());
+        return prefix + currentUser.getId() + "/" + UUID.randomUUID() + "-" + sanitizeFileName(fileDetails.fileName());
     }
 
     private String sanitizeFileName(String fileName) {
@@ -149,70 +257,22 @@ public class R2StorageService {
                 .replaceAll("[^a-zA-Z0-9._-]", "_");
     }
 
-    private void validateUploadRequest(GenerateUploadUrlRequestDTO request) {
+    private void validateBasicUploadDetails(UploadFileDetails fileDetails) {
 
-        String fileType = normalizeFileType(request.getFileType());
-        String contentType = request.getContentType().toLowerCase(Locale.ROOT);
-        String fileName = request.getFileName().toLowerCase(Locale.ROOT);
-
-        if ("PDF".equals(fileType)) {
-            validatePdfUpload(fileName, contentType, request.getFileSize());
-            return;
+        if (isBlank(fileDetails.fileName())) {
+            throw new IllegalArgumentException("File name is required");
         }
 
-        if ("THUMBNAIL".equals(fileType)) {
-            validateThumbnailUpload(fileName, contentType, request.getFileSize());
-            return;
+        if (isBlank(fileDetails.contentType())) {
+            throw new IllegalArgumentException("Content type is required");
         }
 
-        throw new IllegalArgumentException("File type must be PDF or THUMBNAIL");
-    }
-
-    private void validatePdfUpload(String fileName, String contentType, Long fileSize) {
-
-        if (!"application/pdf".equals(contentType)) {
-            throw new IllegalArgumentException("PDF content type must be application/pdf");
-        }
-
-        if (!fileName.endsWith(".pdf")) {
-            throw new IllegalArgumentException("PDF file name must end with .pdf");
-        }
-
-        if (fileSize > MAX_PDF_SIZE) {
-            throw new IllegalArgumentException("PDF file size must be 50 MB or less");
+        if (fileDetails.fileSize() == null || fileDetails.fileSize() <= 0) {
+            throw new IllegalArgumentException("File size must be positive");
         }
     }
 
-    private void validateThumbnailUpload(String fileName, String contentType, Long fileSize) {
-
-        boolean validContentType = "image/jpeg".equals(contentType)
-                || "image/png".equals(contentType)
-                || "image/webp".equals(contentType);
-
-        boolean validExtension = fileName.endsWith(".jpg")
-                || fileName.endsWith(".jpeg")
-                || fileName.endsWith(".png")
-                || fileName.endsWith(".webp");
-
-        if (!validContentType) {
-            throw new IllegalArgumentException("Thumbnail content type must be image/jpeg, image/png, or image/webp");
-        }
-
-        if (!validExtension) {
-            throw new IllegalArgumentException("Thumbnail file name must end with .jpg, .jpeg, .png, or .webp");
-        }
-
-        if (fileSize > MAX_THUMBNAIL_SIZE) {
-            throw new IllegalArgumentException("Thumbnail file size must be 5 MB or less");
-        }
-    }
-
-    private String normalizeFileType(String fileType) {
-
-        return fileType.toUpperCase(Locale.ROOT);
-    }
-
-    private boolean hasAccess(UserEntity currentUser, PdfProductEntity product) {
+    private boolean hasAccess(UserEntity currentUser, ProductEntity product) {
 
         if (product.getSeller().getId().equals(currentUser.getId())) {
             return true;
@@ -226,6 +286,20 @@ public class R2StorageService {
         validateProperties();
 
         return S3Presigner.builder()
+                .endpointOverride(URI.create(r2Properties.getEndpoint()))
+                .region(Region.of("auto"))
+                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
+                        r2Properties.getAccessKeyId(),
+                        r2Properties.getSecretAccessKey()
+                )))
+                .build();
+    }
+
+    private S3Client createS3Client() {
+
+        validateProperties();
+
+        return S3Client.builder()
                 .endpointOverride(URI.create(r2Properties.getEndpoint()))
                 .region(Region.of("auto"))
                 .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
@@ -249,5 +323,21 @@ public class R2StorageService {
 
         return value == null || value.isBlank();
     }
-}
 
+    private record UploadFileDetails(
+            String fileName,
+            String contentType,
+            String fileType,
+            Long fileSize
+    ) {
+    }
+
+    public record StoredFile(
+            String fileKey,
+            String fileType,
+            String contentType,
+            String originalName,
+            Long sizeBytes
+    ) {
+    }
+}

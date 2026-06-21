@@ -17,4 +17,3 @@ public class AddCartItemRequestDTO {
     @NotNull(message = "Product id is required")
     private UUID productId;
 }
-

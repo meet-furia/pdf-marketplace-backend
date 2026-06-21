@@ -16,7 +16,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "cart_items")
-public class CartElementEntity extends AbstractEntity {
+public class CartItemEntity extends AbstractEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "cart_id", nullable = false)
@@ -24,9 +24,10 @@ public class CartElementEntity extends AbstractEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "product_id", nullable = false)
-    private PdfProductEntity product;
+    private ProductEntity product;
 
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal priceAtTime;
 }
+
 

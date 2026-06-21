@@ -26,6 +26,14 @@ public class PurchasedPdfResponseDTO {
 
     private String description;
 
+    private String fileType;
+
+    private String fileContentType;
+
+    private String fileOriginalName;
+
+    private Long fileSizeBytes;
+
     private String thumbnailKey;
 
     private String category;

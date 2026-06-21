@@ -1,4 +1,4 @@
-package com.meet.pdf_marketplace.controller;
+package com.meet.pdf_marketplace.controller.customer;
 
 import com.meet.pdf_marketplace.dto.common.ApiResponseDTO;
 import com.meet.pdf_marketplace.dto.library.DownloadAccessResponseDTO;
@@ -19,18 +19,17 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
-@RequestMapping("/api/v1/library")
-public class PurchasedPdfController {
+@RequestMapping("/api/v1/customer/library")
+public class LibraryController {
 
     private final PurchasedPdfService purchasedPdfService;
 
     private final CurrentUserService currentUserService;
 
     /**
-     * Lists PDFs available in a user's purchased library.
-     * Download URLs are not generated yet.
+     * Lists products in the current customer's purchased library.
      */
-    @GetMapping("/me")
+    @GetMapping
     public ApiResponseDTO<List<PurchasedPdfResponseDTO>> getMyLibrary() {
 
         UserEntity currentUser = currentUserService.getCurrentUser();
@@ -44,8 +43,7 @@ public class PurchasedPdfController {
     }
 
     /**
-     * Checks whether a user can access a product PDF.
-     * Returns only true or false for now.
+     * Checks whether the current customer can access a product download.
      */
     @GetMapping("/products/{productId}/access")
     public ApiResponseDTO<DownloadAccessResponseDTO> hasAccess(
@@ -57,14 +55,13 @@ public class PurchasedPdfController {
 
         return ApiResponseDTO.<DownloadAccessResponseDTO>builder()
                 .success(true)
-                .message("PDF access checked successfully")
+                .message("Product file access checked successfully")
                 .data(access)
                 .build();
     }
 
     /**
      * Generates a signed download URL when access is allowed.
-     * The file key is never exposed in the response.
      */
     @GetMapping("/products/{productId}/download")
     public ApiResponseDTO<DownloadAccessResponseDTO> download(
@@ -76,7 +73,7 @@ public class PurchasedPdfController {
 
         return ApiResponseDTO.<DownloadAccessResponseDTO>builder()
                 .success(true)
-                .message("PDF download access checked successfully")
+                .message("Product file download access checked successfully")
                 .data(download)
                 .build();
     }
