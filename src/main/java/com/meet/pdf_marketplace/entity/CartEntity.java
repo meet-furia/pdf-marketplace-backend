@@ -1,14 +1,7 @@
 package com.meet.pdf_marketplace.entity;
 
 import com.meet.pdf_marketplace.enums.CartStatus;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -37,4 +30,3 @@ public class CartEntity extends AbstractEntity {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal totalAmount;
 }
-

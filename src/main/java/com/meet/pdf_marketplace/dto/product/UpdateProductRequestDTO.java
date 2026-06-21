@@ -15,7 +15,7 @@ import java.math.BigDecimal;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UpdatePdfProductRequestDTO {
+public class UpdateProductRequestDTO {
 
     @NotBlank(message = "Title is required")
     private String title;
@@ -26,11 +26,6 @@ public class UpdatePdfProductRequestDTO {
     @NotNull(message = "Price is required")
     @DecimalMin(value = "0.0", inclusive = false, message = "Product price must be positive")
     private BigDecimal price;
-
-    @NotBlank(message = "File key is required")
-    private String fileKey;
-
-    private String thumbnailKey;
 
     private String category;
 

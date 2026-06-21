@@ -26,4 +26,3 @@ public class CartResponseDTO {
 
     private List<CartItemResponseDTO> items;
 }
-

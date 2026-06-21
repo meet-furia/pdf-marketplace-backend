@@ -1,4 +1,4 @@
-package com.meet.pdf_marketplace.controller;
+package com.meet.pdf_marketplace.controller.customer;
 
 import com.meet.pdf_marketplace.dto.common.ApiResponseDTO;
 import com.meet.pdf_marketplace.dto.auth.RegisterUserRequestDTO;
@@ -17,14 +17,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
-@RequestMapping("/api/v1/auth")
+@RequestMapping("/api/v1/customer/auth")
 public class AuthController {
 
     private final AuthService authService;
 
     /**
-     * Registers a new local user or updates an existing Supabase-linked user.
-     * Returns the saved user wrapped in the standard API response.
+     * Registers or syncs the current authenticated customer.
      */
     @PostMapping("/register")
     public ApiResponseDTO<UserResponseDTO> register(

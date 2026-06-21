@@ -34,10 +34,9 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/register").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/products").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/products/published").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/products/{productId}").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/customer/auth/register").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/customer/products").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/customer/products/{productId}").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.decoder(jwtDecoder())))
