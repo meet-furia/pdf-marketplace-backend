@@ -1,6 +1,7 @@
 package com.meet.pdf_marketplace.dto.payment;
 
 import com.meet.pdf_marketplace.enums.PaymentStatus;
+import com.meet.pdf_marketplace.enums.PaymentProvider;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -35,6 +36,6 @@ public class PaymentInvoiceResponseDTO {
 
     private PaymentStatus status;
 
-    private String paymentMethod;
+    private PaymentProvider paymentProvider;
 }
 

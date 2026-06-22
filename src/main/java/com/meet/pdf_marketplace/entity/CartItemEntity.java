@@ -7,8 +7,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
-import java.math.BigDecimal;
-
 @Getter
 @Setter
 @Entity
@@ -25,9 +23,6 @@ public class CartItemEntity extends AbstractEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "product_id", nullable = false)
     private ProductEntity product;
-
-    @Column(nullable = false, precision = 12, scale = 2)
-    private BigDecimal priceAtTime;
 }
 
 

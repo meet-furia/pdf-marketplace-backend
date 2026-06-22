@@ -14,6 +14,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -78,7 +81,7 @@ public class ProductService {
     }
 
     /**
-     * Updates product metadata owned by the current seller.
+     * Updates product metadata and optionally replaces stored product files.
      */
     @Transactional
     public ProductResponseDTO update(
@@ -91,17 +94,54 @@ public class ProductService {
 
         validateSeller(currentUser, product);
 
-        product.setTitle(request.getTitle().trim());
-        product.setDescription(request.getDescription().trim());
-        product.setPrice(request.getPrice());
-        product.setCategory(normalizeOptionalText(request.getCategory()));
-        product.setStatus(resolveSellerStatus(request.getStatus()));
+        R2StorageService.StoredFile replacementProductFile = null;
+        R2StorageService.StoredFile replacementThumbnailFile = null;
+        String previousProductFileKey = product.getFileKey();
+        String previousThumbnailKey = product.getThumbnailKey();
 
-        ProductEntity savedProduct = productRepository.save(product);
+        try {
+            // Upload replacements first, but do not delete the old objects yet.
+            // The database still references the old keys until this transaction commits.
+            if (hasFile(request.getProductFile())) {
+                replacementProductFile = r2StorageService.uploadProductFile(currentUser, request.getProductFile());
+                applyProductFile(product, replacementProductFile);
+            }
 
-        log.info("Product updated successfully. productId={}, sellerId={}", savedProduct.getId(), currentUser.getId());
+            if (hasFile(request.getThumbnailFile())) {
+                replacementThumbnailFile = r2StorageService.uploadThumbnailFile(currentUser, request.getThumbnailFile());
+                product.setThumbnailKey(replacementThumbnailFile.fileKey());
+            }
 
-        return toDto(savedProduct);
+            product.setTitle(request.getTitle().trim());
+            product.setDescription(request.getDescription().trim());
+            product.setPrice(request.getPrice());
+            product.setCategory(normalizeOptionalText(request.getCategory()));
+
+            // Metadata and thumbnail changes take effect directly. Replacing the
+            // sellable file requires admin review before it can be published again.
+            if (replacementProductFile != null) {
+                product.setStatus(PdfProductStatus.PENDING_APPROVAL);
+            }
+
+            ProductEntity savedProduct = productRepository.save(product);
+
+            // Only keys that were actually replaced are scheduled for deletion.
+            // Passing null preserves the existing product file or thumbnail.
+            scheduleReplacedFileCleanup(
+                    replacementProductFile == null ? null : previousProductFileKey,
+                    replacementThumbnailFile == null ? null : previousThumbnailKey
+            );
+
+            log.info("Product updated successfully. productId={}, sellerId={}", savedProduct.getId(), currentUser.getId());
+
+            return toDto(savedProduct);
+        } catch (RuntimeException exception) {
+            // A failed DB update must not leave newly uploaded, unreferenced objects in R2.
+            // The previous objects are still intact and the transaction can safely roll back.
+            cleanupUploadedFile(replacementProductFile);
+            cleanupUploadedFile(replacementThumbnailFile);
+            throw exception;
+        }
     }
 
     /**
@@ -165,16 +205,82 @@ public class ProductService {
         }
     }
 
+    /**
+     * Deletes a newly uploaded file when product persistence cannot complete.
+     */
     private void cleanupUploadedFile(R2StorageService.StoredFile file) {
 
         try {
             r2StorageService.deleteFile(file == null ? null : file.fileKey());
         } catch (RuntimeException exception) {
-            // Cleanup failure should not hide the original product creation failure.
-            log.warn("Failed to cleanup uploaded file after product creation failure", exception);
+            // Best-effort cleanup must not hide the original create/update failure.
+            log.warn("Failed to cleanup uploaded file after product persistence failure", exception);
         }
     }
 
+    /**
+     * Checks whether an optional multipart field contains an uploaded file.
+     */
+    private boolean hasFile(MultipartFile file) {
+
+        return file != null && !file.isEmpty();
+    }
+
+    /**
+     * Copies replacement product-file metadata onto the persisted product entity.
+     */
+    private void applyProductFile(ProductEntity product, R2StorageService.StoredFile file) {
+
+        product.setFileKey(file.fileKey());
+        product.setFileType(file.fileType());
+        product.setFileContentType(file.contentType());
+        product.setFileOriginalName(file.originalName());
+        product.setFileSizeBytes(file.sizeBytes());
+    }
+
+    /**
+     * Registers deletion of replaced R2 objects after the database transaction commits.
+     */
+    private void scheduleReplacedFileCleanup(String previousProductFileKey, String previousThumbnailKey) {
+
+        if (previousProductFileKey == null && previousThumbnailKey == null) {
+            return;
+        }
+
+        /*
+         * R2 is not part of the database transaction. Deleting old objects before
+         * commit could break the product if the DB update later rolls back.
+         * afterCommit keeps the old files available until the new keys are durable.
+         */
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            /**
+             * Removes old files after the replacement keys are safely committed.
+             */
+            @Override
+            public void afterCommit() {
+                cleanupReplacedFile(previousProductFileKey);
+                cleanupReplacedFile(previousThumbnailKey);
+            }
+        });
+    }
+
+    /**
+     * Deletes one replaced R2 object without failing an already committed update.
+     */
+    private void cleanupReplacedFile(String fileKey) {
+
+        try {
+            r2StorageService.deleteFile(fileKey);
+        } catch (RuntimeException exception) {
+            // The committed product already points to the replacement. A failed delete
+            // creates an orphaned object, but should not fail the successful update.
+            log.warn("Failed to delete replaced product file. fileKey={}", fileKey, exception);
+        }
+    }
+
+    /**
+     * Trims optional text and converts blank values to null.
+     */
     private String normalizeOptionalText(String value) {
 
         if (value == null || value.isBlank()) {
@@ -191,23 +297,6 @@ public class ProductService {
 
         return productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
-    }
-
-    /**
-     * Prevents sellers from publishing without admin approval.
-     */
-    private PdfProductStatus resolveSellerStatus(PdfProductStatus requestedStatus) {
-
-        if (requestedStatus == null) {
-            return PdfProductStatus.PENDING_APPROVAL;
-        }
-
-        if (requestedStatus == PdfProductStatus.PUBLISHED) {
-            // Sellers cannot directly publish products. Admin approval is required.
-            return PdfProductStatus.PENDING_APPROVAL;
-        }
-
-        return requestedStatus;
     }
 
     /**

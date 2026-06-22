@@ -8,8 +8,7 @@ import java.util.UUID;
 
 public interface PaymentRepository extends AbstractRepository<PaymentEntity, UUID> {
 
-    Optional<PaymentEntity> findByCartIdAndStatus(UUID cartId, PaymentStatus status);
+    Optional<PaymentEntity> findByOrderIdAndStatus(UUID orderId, PaymentStatus status);
 
-    Optional<PaymentEntity> findByRazorpayOrderId(String razorpayOrderId);
 }
 

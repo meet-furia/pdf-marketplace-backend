@@ -60,12 +60,12 @@ public class SellerProductController {
     }
 
     /**
-     * Updates product metadata owned by the current seller.
+     * Updates product metadata and optionally replaces its stored files.
      */
-    @PutMapping("/{productId}")
+    @PutMapping(value = "/{productId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponseDTO<ProductResponseDTO> update(
             @PathVariable UUID productId,
-            @Valid @RequestBody UpdateProductRequestDTO request
+            @Valid @ModelAttribute UpdateProductRequestDTO request
     ) {
 
         UserEntity currentUser = currentUserService.getCurrentUser();

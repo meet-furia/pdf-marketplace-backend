@@ -85,7 +85,8 @@ public class SellerService {
 
         List<OrderItemEntity> items = orderItemRepository.findByProductSellerId(currentUser.getId())
                 .stream()
-                .filter(item -> item.getOrder().getStatus() == OrderStatus.PAID)
+                .filter(item -> item.getOrder().getStatus() == OrderStatus.COMPLETED
+                        || item.getOrder().getStatus() == OrderStatus.PAID)
                 .toList();
 
         long paidOrderCount = items.stream()
@@ -102,6 +103,9 @@ public class SellerService {
                 .build();
     }
 
+    /**
+     * Sums a selected monetary field across seller order items.
+     */
     private BigDecimal sum(List<OrderItemEntity> items, Function<OrderItemEntity, BigDecimal> mapper) {
 
         return items.stream()
@@ -109,6 +113,9 @@ public class SellerService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
+    /**
+     * Converts stored payout details into a safe response with a masked account number.
+     */
     private SellerPaymentDetailsResponseDTO toPaymentResponse(SellerPaymentDetailsEntity details) {
 
         return SellerPaymentDetailsResponseDTO.builder()
@@ -122,6 +129,9 @@ public class SellerService {
                 .build();
     }
 
+    /**
+     * Hides all but the final four digits of a stored bank account number.
+     */
     private String maskAccountNumber(String accountNumber) {
 
         if (accountNumber == null || accountNumber.length() <= 4) {
@@ -131,6 +141,9 @@ public class SellerService {
         return "****" + accountNumber.substring(accountNumber.length() - 4);
     }
 
+    /**
+     * Requires either complete bank details or a usable UPI payout route.
+     */
     private void validatePayoutMethod(
             String bankName,
             String accountNumber,
@@ -142,20 +155,28 @@ public class SellerService {
         boolean hasCompleteBankDetails = bankName != null && accountNumber != null && ifscCode != null;
         boolean hasUpiId = upiId != null;
 
+        // Prevent partially configured bank payouts: these three fields are one unit.
         if (hasAnyBankDetail && !hasCompleteBankDetails) {
             throw new BadRequestException("Bank name, account number, and IFSC code are all required for bank payouts");
         }
 
+        // A seller may use bank details, UPI, or both, but must provide at least one route.
         if (!hasCompleteBankDetails && !hasUpiId) {
             throw new BadRequestException("Provide complete bank details or a UPI ID");
         }
     }
 
+    /**
+     * Trims a required text field after request validation has confirmed it exists.
+     */
     private String normalizeRequiredText(String value) {
 
         return value.trim();
     }
 
+    /**
+     * Trims optional text and converts blank values to null.
+     */
     private String normalizeOptionalText(String value) {
 
         if (value == null || value.isBlank()) {
