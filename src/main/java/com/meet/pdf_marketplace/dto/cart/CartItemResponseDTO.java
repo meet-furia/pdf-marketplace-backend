@@ -25,6 +25,4 @@ public class CartItemResponseDTO {
     private String thumbnailKey;
 
     private BigDecimal currentPrice;
-
-    private BigDecimal priceAtTime;
 }

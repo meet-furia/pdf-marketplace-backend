@@ -15,15 +15,19 @@ import java.math.RoundingMode;
 
 @Service
 @RequiredArgsConstructor
-public class RazorpayGateway {
+public class RazorpayService {
 
     private final RazorpayProperties razorpayProperties;
 
+    /**
+     * Creates a Razorpay order and returns its external order identifier.
+     */
     public String createOrder(BigDecimal amount, String currency, String receipt) {
 
         ensureCredentials();
 
         try {
+            // Razorpay expects the amount in the currency's smallest unit.
             JSONObject options = new JSONObject();
             options.put("amount", toSmallestCurrencyUnit(amount));
             options.put("currency", currency);
@@ -37,11 +41,15 @@ public class RazorpayGateway {
         }
     }
 
+    /**
+     * Verifies that the payment callback was signed by Razorpay.
+     */
     public boolean isValidSignature(VerifyPaymentRequestDTO request) {
 
         ensureCredentials();
 
         try {
+            // These key names are fixed by Razorpay's signature verification contract.
             JSONObject options = new JSONObject();
             options.put("razorpay_order_id", request.getRazorpayOrderId());
             options.put("razorpay_payment_id", request.getRazorpayPaymentId());
@@ -53,21 +61,33 @@ public class RazorpayGateway {
         }
     }
 
+    /**
+     * Returns the public Razorpay key used by the frontend checkout widget.
+     */
     public String getKeyId() {
 
         return razorpayProperties.getKeyId();
     }
 
+    /**
+     * Returns the configured Razorpay currency, defaulting to INR.
+     */
     public String getCurrency() {
 
         return isBlank(razorpayProperties.getCurrency()) ? "INR" : razorpayProperties.getCurrency();
     }
 
+    /**
+     * Creates an authenticated Razorpay SDK client.
+     */
     private RazorpayClient razorpayClient() throws RazorpayException {
 
         return new RazorpayClient(razorpayProperties.getKeyId(), razorpayProperties.getKeySecret());
     }
 
+    /**
+     * Converts a decimal amount to the smallest currency unit expected by Razorpay.
+     */
     private long toSmallestCurrencyUnit(BigDecimal amount) {
 
         return amount.multiply(BigDecimal.valueOf(100))
@@ -75,6 +95,9 @@ public class RazorpayGateway {
                 .longValueExact();
     }
 
+    /**
+     * Fails fast when Razorpay credentials are not configured.
+     */
     private void ensureCredentials() {
 
         if (isBlank(razorpayProperties.getKeyId()) || isBlank(razorpayProperties.getKeySecret())) {
@@ -82,9 +105,11 @@ public class RazorpayGateway {
         }
     }
 
+    /**
+     * Checks whether a configuration value is absent or blank.
+     */
     private boolean isBlank(String value) {
 
         return value == null || value.isBlank();
     }
 }
-

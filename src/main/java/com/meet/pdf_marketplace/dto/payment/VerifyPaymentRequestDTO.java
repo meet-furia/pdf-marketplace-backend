@@ -21,6 +21,5 @@ public class VerifyPaymentRequestDTO {
     @NotBlank(message = "Razorpay signature is required")
     private String razorpaySignature;
 
-    private String paymentMethod;
 }
 

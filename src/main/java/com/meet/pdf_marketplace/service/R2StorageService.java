@@ -70,6 +70,9 @@ public class R2StorageService {
         return uploadFile(currentUser, file, fileDetails);
     }
 
+    /**
+     * Extracts upload metadata and applies validation for the requested file role.
+     */
     private UploadFileDetails validateAndBuildFileDetails(MultipartFile file, String requestedFileType) {
 
         UploadFileDetails fileDetails = buildFileDetails(file, requestedFileType);
@@ -103,6 +106,9 @@ public class R2StorageService {
         throw new IllegalArgumentException("Unsupported upload file type");
     }
 
+    /**
+     * Builds the initial metadata representation from a multipart upload.
+     */
     private UploadFileDetails buildFileDetails(MultipartFile file, String requestedFileType) {
 
         if (file == null || file.isEmpty()) {
@@ -117,6 +123,9 @@ public class R2StorageService {
         );
     }
 
+    /**
+     * Streams a validated file to R2 and returns its stored metadata.
+     */
     private StoredFile uploadFile(UserEntity currentUser, MultipartFile file, UploadFileDetails fileDetails) {
 
         String fileKey = buildFileKey(currentUser, fileDetails);
@@ -125,6 +134,7 @@ public class R2StorageService {
                 .bucket(r2Properties.getBucketName())
                 .key(fileKey)
                 .contentType(fileDetails.contentType())
+                // Make purchased files download with a useful, sanitized original name.
                 .contentDisposition("attachment; filename=\"" + sanitizeFileName(fileDetails.fileName()) + "\"")
                 .contentLength(fileDetails.fileSize())
                 .build();
@@ -237,9 +247,14 @@ public class R2StorageService {
             return r2Properties.getPublicBaseUrl().replaceAll("/+$", "") + "/" + fileKey;
         }
 
+        // Local/private configurations may not expose a public R2 domain, so use a
+        // temporary signed URL for thumbnails as a fallback.
         return generateAuthorizedDownloadUrl(fileKey).getDownloadUrl();
     }
 
+    /**
+     * Creates a unique, seller-scoped R2 key for a product file or thumbnail.
+     */
     private String buildFileKey(UserEntity currentUser, UploadFileDetails fileDetails) {
 
         String prefix = switch (fileDetails.fileType()) {
@@ -250,13 +265,20 @@ public class R2StorageService {
         return prefix + currentUser.getId() + "/" + UUID.randomUUID() + "-" + sanitizeFileName(fileDetails.fileName());
     }
 
+    /**
+     * Removes client paths and unsafe characters from an uploaded filename.
+     */
     private String sanitizeFileName(String fileName) {
 
+        // Strip any client-supplied path and keep only storage/header-safe characters.
         return fileName.replace("\\", "/")
                 .substring(fileName.replace("\\", "/").lastIndexOf("/") + 1)
                 .replaceAll("[^a-zA-Z0-9._-]", "_");
     }
 
+    /**
+     * Verifies that required filename, content type, and size metadata are present.
+     */
     private void validateBasicUploadDetails(UploadFileDetails fileDetails) {
 
         if (isBlank(fileDetails.fileName())) {
@@ -272,6 +294,9 @@ public class R2StorageService {
         }
     }
 
+    /**
+     * Checks whether the user owns or has purchased the requested product.
+     */
     private boolean hasAccess(UserEntity currentUser, ProductEntity product) {
 
         if (product.getSeller().getId().equals(currentUser.getId())) {
@@ -281,6 +306,9 @@ public class R2StorageService {
         return purchasedPdfRepository.existsByUserIdAndProductId(currentUser.getId(), product.getId());
     }
 
+    /**
+     * Creates an R2 presigner used to generate short-lived download URLs.
+     */
     private S3Presigner createPresigner() {
 
         validateProperties();
@@ -295,6 +323,9 @@ public class R2StorageService {
                 .build();
     }
 
+    /**
+     * Creates an authenticated R2 client used for object uploads and deletions.
+     */
     private S3Client createS3Client() {
 
         validateProperties();
@@ -309,6 +340,9 @@ public class R2StorageService {
                 .build();
     }
 
+    /**
+     * Ensures all required R2 connection properties are configured.
+     */
     private void validateProperties() {
 
         if (isBlank(r2Properties.getEndpoint())
@@ -319,6 +353,9 @@ public class R2StorageService {
         }
     }
 
+    /**
+     * Checks whether a string is null, empty, or whitespace-only.
+     */
     private boolean isBlank(String value) {
 
         return value == null || value.isBlank();
