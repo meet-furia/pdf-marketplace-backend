@@ -61,7 +61,6 @@ public class CartService {
         CartItemEntity item = CartItemEntity.builder()
                 .cart(cart)
                 .product(product)
-                .priceAtTime(product.getPrice())
                 .build();
 
         cartItemRepository.save(item);
@@ -80,7 +79,7 @@ public class CartService {
                     CartEntity cart = cartRepository.findByUserIdAndStatus(currentUser.getId(), CartStatus.ACTIVE)
                             .orElseThrow(() -> new ResourceNotFoundException("Active cart not found"));
 
-                    snapshotCurrentPrices(cart);
+                    recalculateTotal(cart);
                     requireCartTotal(cart);
                     cart.setStatus(CartStatus.PAYMENT_PENDING);
 
@@ -210,32 +209,12 @@ public class CartService {
 
         BigDecimal totalAmount = cartItemRepository.findByCartId(cart.getId())
                 .stream()
-                .map(CartItemEntity::getPriceAtTime)
+                .map(item -> item.getProduct().getPrice())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         cart.setTotalAmount(totalAmount);
 
         return cartRepository.save(cart);
-    }
-
-    /**
-     * Captures latest product prices just before checkout payment starts.
-     */
-    private CartEntity snapshotCurrentPrices(CartEntity cart) {
-
-        List<CartItemEntity> items = cartItemRepository.findByCartId(cart.getId());
-
-        if (items.isEmpty()) {
-            throw new BadRequestException("Cart must not be empty");
-        }
-
-        for (CartItemEntity item : items) {
-            item.setPriceAtTime(item.getProduct().getPrice());
-        }
-
-        cartItemRepository.saveAll(items);
-
-        return recalculateTotal(cart);
     }
 
     /**
@@ -269,7 +248,6 @@ public class CartService {
                 .fileType(item.getProduct().getFileType())
                 .thumbnailKey(item.getProduct().getThumbnailKey())
                 .currentPrice(item.getProduct().getPrice())
-                .priceAtTime(item.getPriceAtTime())
                 .build();
     }
 }

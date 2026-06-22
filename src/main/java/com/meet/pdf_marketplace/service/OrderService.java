@@ -30,24 +30,25 @@ public class OrderService {
     private final CartItemRepository cartItemRepository;
 
     /**
-     * Orders are created only by checkout after payment verification succeeds.
+     * Creates a payment-pending order and snapshots the latest product prices.
+     * Repeated checkout calls reuse the pending order for the same cart.
      */
-    public OrderResponseDTO createFromCart(UserEntity currentUser) {
+    public OrderEntity createPaymentPendingOrder(
+            UserEntity currentUser,
+            CartEntity cart,
+            String currency
+    ) {
 
-        throw new IllegalArgumentException("Orders are created only after successful payment");
+        return orderRepository.findByCartId(cart.getId())
+                .orElseGet(() -> createOrder(currentUser, cart, currency));
     }
 
     /**
-     * Creates an order from a paid payment and its frozen cart.
-     * Duplicate calls return the already-created order.
+     * Creates the pending order and immutable order-item price snapshots.
      */
-    public OrderEntity createFromPaidPayment(PaymentEntity payment) {
+    private OrderEntity createOrder(UserEntity currentUser, CartEntity cart, String currency) {
 
-        if (payment.getOrder() != null) {
-            return payment.getOrder();
-        }
-
-        List<CartItemEntity> cartItems = cartItemRepository.findByCartId(payment.getCart().getId());
+        List<CartItemEntity> cartItems = cartItemRepository.findByCartId(cart.getId());
 
         if (cartItems.isEmpty()) {
             throw new IllegalArgumentException("Cart must not be empty");
@@ -56,31 +57,42 @@ public class OrderService {
         BigDecimal totalAmount = sumPrices(cartItems);
         BigDecimal platformFee = calculatePlatformFee(totalAmount);
 
+        // The order total is fixed before the external payment order is created.
         OrderEntity order = orderRepository.save(OrderEntity.builder()
-                .user(payment.getUser())
-                .payment(payment)
+                .user(currentUser)
+                .cart(cart)
                 .totalAmount(totalAmount)
                 .platformFee(platformFee)
                 .sellerEarning(totalAmount.subtract(platformFee))
-                .currency(payment.getCurrency())
-                .status(OrderStatus.PAID)
+                .currency(currency)
+                .status(OrderStatus.PAYMENT_PENDING)
                 .build());
 
         for (CartItemEntity cartItem : cartItems) {
-            BigDecimal itemPlatformFee = calculatePlatformFee(cartItem.getPriceAtTime());
+            // Order items preserve the latest product price at checkout permanently.
+            BigDecimal priceAtPurchase = cartItem.getProduct().getPrice();
+            BigDecimal itemPlatformFee = calculatePlatformFee(priceAtPurchase);
 
             orderItemRepository.save(OrderItemEntity.builder()
                     .order(order)
                     .product(cartItem.getProduct())
-                    .priceAtPurchase(cartItem.getPriceAtTime())
+                    .priceAtPurchase(priceAtPurchase)
                     .platformFee(itemPlatformFee)
-                    .sellerEarning(cartItem.getPriceAtTime().subtract(itemPlatformFee))
+                    .sellerEarning(priceAtPurchase.subtract(itemPlatformFee))
                     .build());
         }
 
-        payment.setOrder(order);
-
         return order;
+    }
+
+    /**
+     * Completes the existing order after payment verification succeeds.
+     */
+    public OrderEntity completePayment(OrderEntity order) {
+
+        order.setStatus(OrderStatus.COMPLETED);
+
+        return orderRepository.save(order);
     }
 
     /**
@@ -135,7 +147,7 @@ public class OrderService {
     private BigDecimal sumPrices(List<CartItemEntity> cartItems) {
 
         return cartItems.stream()
-                .map(CartItemEntity::getPriceAtTime)
+                .map(cartItem -> cartItem.getProduct().getPrice())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
@@ -152,6 +164,7 @@ public class OrderService {
         return OrderResponseDTO.builder()
                 .id(order.getId())
                 .userId(order.getUser().getId())
+                .cartId(order.getCart().getId())
                 .totalAmount(order.getTotalAmount())
                 .platformFee(order.getPlatformFee())
                 .sellerEarning(order.getSellerEarning())
@@ -178,4 +191,3 @@ public class OrderService {
                 .build();
     }
 }
-

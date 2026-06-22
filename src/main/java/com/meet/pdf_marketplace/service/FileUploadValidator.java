@@ -18,12 +18,17 @@ public class FileUploadValidator {
             "webm", "wmv"
     );
 
+    /**
+     * Validates a sellable digital file while explicitly rejecting video uploads.
+     */
     public void validateProductFile(String fileName, String contentType, long fileSize) {
 
         String normalizedFileName = fileName.toLowerCase(Locale.ROOT);
         String normalizedContentType = contentType.toLowerCase(Locale.ROOT);
         String extension = getExtension(normalizedFileName);
 
+        // Browsers may report unknown files as application/octet-stream. Check both
+        // MIME type and extension so common videos are still rejected.
         if (normalizedContentType.startsWith("video/") || VIDEO_EXTENSIONS.contains(extension)) {
             throw new IllegalArgumentException("Video files are not supported yet");
         }
@@ -33,6 +38,9 @@ public class FileUploadValidator {
         }
     }
 
+    /**
+     * Validates that a thumbnail is a supported image within the size limit.
+     */
     public void validateThumbnailFile(String fileName, String contentType, long fileSize) {
 
         String normalizedFileName = fileName.toLowerCase(Locale.ROOT);
@@ -49,6 +57,7 @@ public class FileUploadValidator {
                 || normalizedFileName.endsWith(".webp")
                 || normalizedFileName.endsWith(".gif");
 
+        // Require the MIME type and extension to agree for public-facing thumbnails.
         if (!validContentType) {
             throw new IllegalArgumentException("Image content type must be image/jpeg, image/png, image/webp, or image/gif");
         }
@@ -62,6 +71,9 @@ public class FileUploadValidator {
         }
     }
 
+    /**
+     * Derives the short display type shown to users from the filename extension.
+     */
     public String determineProductFileType(String fileName) {
 
         String extension = getExtension(fileName);
@@ -69,6 +81,9 @@ public class FileUploadValidator {
         return extension.isBlank() ? "FILE" : extension.toUpperCase(Locale.ROOT);
     }
 
+    /**
+     * Returns the lowercase filename extension or an empty string when absent.
+     */
     private String getExtension(String fileName) {
 
         int extensionSeparator = fileName.lastIndexOf('.');

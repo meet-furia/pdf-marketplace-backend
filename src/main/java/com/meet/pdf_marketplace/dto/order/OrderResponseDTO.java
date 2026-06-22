@@ -21,6 +21,8 @@ public class OrderResponseDTO {
 
     private UUID userId;
 
+    private UUID cartId;
+
     private BigDecimal totalAmount;
 
     private BigDecimal platformFee;
